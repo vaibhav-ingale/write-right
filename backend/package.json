@@ -1,0 +1,18 @@
+{
+  "name": "ai-text-refiner-backend",
+  "version": "1.0.0",
+  "description": "Local backend API for AI Text Refiner Chrome extension.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
