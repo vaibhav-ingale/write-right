@@ -100,9 +100,20 @@ function setTextToElement(el, text) {
   }
 }
 
-function generatePassword(length = 20) {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
+function generatePassword(length = 20, includeNumbers = true, includeSymbols = true) {
+  let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  if (includeNumbers) {
+    chars += "0123456789";
+  }
+  if (includeSymbols) {
+    chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
+  }
+
+  // Ensure there's at least one character type available.
+  if (!chars) {
+    return "";
+  }
+
   let result = "";
   for (let i = 0; i < length; i++) {
     const idx = Math.floor(Math.random() * chars.length);
@@ -159,50 +170,125 @@ function createPopup() {
   wrapper.style.zIndex = "999999";
   wrapper.style.minWidth = "320px";
   wrapper.style.maxWidth = "420px";
-  wrapper.style.background = "rgba(20, 20, 25, 0.95)";
-  wrapper.style.border = "1px solid rgba(255, 255, 255, 0.12)";
+  // Frosted glass look: use a semi-transparent background + backdrop blur.
+  wrapper.style.background = "rgba(20, 20, 25, 0.65)";
+  wrapper.style.border = "1px solid rgba(255, 255, 255, 0.05)";
   wrapper.style.borderRadius = "12px";
-  wrapper.style.boxShadow = "0 10px 50px rgba(0,0,0,0.35)";
+  wrapper.style.boxShadow = "0 10px 50px rgb(0, 0, 0)";
   wrapper.style.color = "#fff";
   wrapper.style.fontFamily = "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
   wrapper.style.padding = "10px";
   wrapper.style.backdropFilter = "blur(10px)";
+  wrapper.style.webkitBackdropFilter = "blur(10px)";
   wrapper.style.transition = "opacity 120ms ease";
   wrapper.style.opacity = "0";
   wrapper.style.maxHeight = "70vh";
   wrapper.style.overflow = "hidden";
 
   wrapper.innerHTML = `
+    <style>
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.25);
+        transition: 0.2s;
+        border-radius: 999px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.2s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: rgba(31, 111, 235, 0.9);
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px rgba(31, 111, 235, 0.9);
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+    </style>
+
     <div id="ai-text-refiner-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; padding-bottom: 8px;">
       <div style="font-weight:600; font-size:14px;">AI Text Refiner</div>
       <button id="ai-text-refiner-close" style="background:transparent; border:none; color:rgba(255,255,255,0.7); font-size:18px; cursor:pointer;">×</button>
     </div>
     <textarea id="ai-text-refiner-input" style="width:100%; height:140px; resize:vertical; border-radius:8px; border:1px solid rgba(255,255,255,0.18); padding:8px; background:rgba(0,0,0,0.45); color:#fff; outline:none; font-size:13px;" spellcheck="true"></textarea>
 
-    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
-      <div style="flex:1 0 180px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+      <div style="font-size:12px; opacity:0.75;">Advanced settings</div>
+      <button id="ai-text-refiner-advanced-toggle" style="background:rgba(255,255,255,0.1); border:none; color:#fff; padding:4px 8px; border-radius:8px; cursor:pointer; font-size:12px;">Show ▾</button>
+    </div>
+
+    <div id="ai-text-refiner-advanced" style="display:none; flex-wrap:wrap; gap:8px; margin-top:8px;">
+      <div style="flex:1 1 180px; min-width:160px;">
         <label style="font-size:11px; opacity:0.75;">Model</label>
-        <select id="ai-text-refiner-model" style="width:100%; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;"></select>
+        <select id="ai-text-refiner-model" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;"></select>
         <div id="ai-text-refiner-model-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Loading models...</div>
       </div>
-      <div style="flex:1 0 140px;">
+      <div style="flex:1 1 140px; min-width:140px;">
         <label style="font-size:11px; opacity:0.75;">Word limit</label>
-        <input id="ai-text-refiner-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
+        <input id="ai-text-refiner-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
         <div id="ai-text-refiner-wordlimit-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Optional</div>
       </div>
-      <div style="flex:1 0 180px;">
+      <div style="flex:1 1 180px; min-width:160px;">
         <label style="font-size:11px; opacity:0.75;">Password</label>
-        <div style="display:flex; gap:6px;">
-          <input id="ai-text-refiner-password-length" type="number" min="8" max="64" value="20" style="flex:1; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
-          <button id="ai-text-refiner-gen-password" style="padding:6px 10px; border-radius:8px; border:none; background:rgba(31,111,235,0.9); color:#fff; cursor:pointer;">Generate</button>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input id="ai-text-refiner-password-length" type="number" min="8" max="64" value="20" style="flex:1; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
+
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label class="switch">
+              <input id="ai-text-refiner-password-numbers" type="checkbox" checked />
+              <span class="slider round"></span>
+            </label>
+            <span style="font-size:11px; opacity:0.85;">Numbers</span>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label class="switch">
+              <input id="ai-text-refiner-password-symbols" type="checkbox" checked />
+              <span class="slider round"></span>
+            </label>
+            <span style="font-size:11px; opacity:0.85;">Symbols</span>
+          </div>
+
+          <button id="ai-text-refiner-gen-password" style="height:34px; padding:0 12px; border-radius:8px; border:none; background:rgba(31,111,235,0.9); color:#fff; cursor:pointer;">Generate</button>
         </div>
-        <div id="ai-text-refiner-password-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Inserts into the text box.</div>
+        <div id="ai-text-refiner-password-status" style="font-size:10px; opacity:0.7; margin-top:6px;">Inserts into the text box.</div>
       </div>
     </div>
 
     <div id="ai-text-refiner-buttons" style="display:flex; flex-wrap:wrap; gap:6px; padding-top:8px;"></div>
     <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-      <button id="ai-text-refiner-apply" style="background:#1f6feb; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:600;">Apply Result</button>
+      <button id="ai-text-refiner-apply" style="background:#1f6feb; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:600;">Insert Text</button>
     </div>
     <div id="ai-text-refiner-count" style="margin-top:8px; font-size:11px; color:rgba(180,220,255,0.75);"></div>
     <div id="ai-text-refiner-status" style="margin-top:4px; font-size:11px; color:rgba(255,255,255,0.7);"></div>
@@ -215,6 +301,18 @@ function createPopup() {
 
   const closeBtn = wrapper.querySelector("#ai-text-refiner-close");
   closeBtn.addEventListener("click", () => closePopup());
+
+  const advancedToggle = wrapper.querySelector("#ai-text-refiner-advanced-toggle");
+  const advancedSection = wrapper.querySelector("#ai-text-refiner-advanced");
+  let advancedOpen = false;
+
+  const setAdvancedOpen = (open) => {
+    advancedOpen = open;
+    advancedSection.style.display = open ? "flex" : "none";
+    advancedToggle.textContent = open ? "Hide ▴" : "Show ▾";
+  };
+
+  advancedToggle.addEventListener("click", () => setAdvancedOpen(!advancedOpen));
 
   wrapper.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -325,6 +423,8 @@ function openPopupForElement(el, keyboardEvent) {
   const wordLimitStatus = popup.querySelector("#ai-text-refiner-wordlimit-status");
   const genPasswordBtn = popup.querySelector("#ai-text-refiner-gen-password");
   const passwordLengthInput = popup.querySelector("#ai-text-refiner-password-length");
+  const numbersToggle = popup.querySelector("#ai-text-refiner-password-numbers");
+  const symbolsToggle = popup.querySelector("#ai-text-refiner-password-symbols");
   const passwordStatus = popup.querySelector("#ai-text-refiner-password-status");
 
   if (wordLimit !== null) {
@@ -350,9 +450,16 @@ function openPopupForElement(el, keyboardEvent) {
     chrome.storage.local?.set?.({ wordLimit });
   });
 
+  const getPasswordOptions = () => ({
+    includeNumbers: !!numbersToggle?.checked,
+    includeSymbols: !!symbolsToggle?.checked
+  });
+
+
   genPasswordBtn.addEventListener("click", () => {
     const length = Number(passwordLengthInput.value) || 20;
-    const password = generatePassword(length);
+    const { includeNumbers, includeSymbols } = getPasswordOptions();
+    const password = generatePassword(length, includeNumbers, includeSymbols);
     textarea.value = password;
     passwordStatus.textContent = "Password generated.";
     updateCount(password);
