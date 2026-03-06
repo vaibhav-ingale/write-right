@@ -3,6 +3,7 @@
 
 const REFINE_SHORTCUT_KEY = "\\";
 const API_ENDPOINT = "http://localhost:8000/v1/chat/completions";
+const MODELS_ENDPOINT = "http://localhost:8000/v1/models";
 
 let activeElement = null;
 let popup = null;
@@ -99,6 +100,58 @@ function setTextToElement(el, text) {
   }
 }
 
+function generatePassword(length = 20) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    const idx = Math.floor(Math.random() * chars.length);
+    result += chars[idx];
+  }
+  return result;
+}
+
+async function loadModelsForPopup(selectEl, statusEl) {
+  if (!selectEl) return;
+  statusEl.textContent = "Loading models...";
+  selectEl.disabled = true;
+
+  try {
+    const response = await fetch(MODELS_ENDPOINT);
+    const data = await response.json();
+
+    if (!response.ok) {
+      statusEl.textContent = `Failed to load models: ${response.status}`;
+      return;
+    }
+
+    const models = Array.isArray(data.models) ? data.models : [];
+
+    selectEl.innerHTML = "";
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Use backend default model";
+    selectEl.appendChild(defaultOption);
+
+    models.forEach((model) => {
+      const option = document.createElement("option");
+      option.value = model;
+      option.textContent = model;
+      selectEl.appendChild(option);
+    });
+
+    if (selectedModel) {
+      selectEl.value = selectedModel;
+    }
+
+    statusEl.textContent = "";
+  } catch (err) {
+    statusEl.textContent = `Unable to load models: ${err.message}`;
+  } finally {
+    selectEl.disabled = false;
+  }
+}
+
 function createPopup() {
   const wrapper = document.createElement("div");
   wrapper.id = "ai-text-refiner-popup";
@@ -125,12 +178,34 @@ function createPopup() {
       <button id="ai-text-refiner-close" style="background:transparent; border:none; color:rgba(255,255,255,0.7); font-size:18px; cursor:pointer;">×</button>
     </div>
     <textarea id="ai-text-refiner-input" style="width:100%; height:140px; resize:vertical; border-radius:8px; border:1px solid rgba(255,255,255,0.18); padding:8px; background:rgba(0,0,0,0.45); color:#fff; outline:none; font-size:13px;" spellcheck="true"></textarea>
+
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+      <div style="flex:1 0 180px;">
+        <label style="font-size:11px; opacity:0.75;">Model</label>
+        <select id="ai-text-refiner-model" style="width:100%; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;"></select>
+        <div id="ai-text-refiner-model-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Loading models...</div>
+      </div>
+      <div style="flex:1 0 140px;">
+        <label style="font-size:11px; opacity:0.75;">Word limit</label>
+        <input id="ai-text-refiner-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
+        <div id="ai-text-refiner-wordlimit-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Optional</div>
+      </div>
+      <div style="flex:1 0 180px;">
+        <label style="font-size:11px; opacity:0.75;">Password</label>
+        <div style="display:flex; gap:6px;">
+          <input id="ai-text-refiner-password-length" type="number" min="8" max="64" value="20" style="flex:1; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
+          <button id="ai-text-refiner-gen-password" style="padding:6px 10px; border-radius:8px; border:none; background:rgba(31,111,235,0.9); color:#fff; cursor:pointer;">Generate</button>
+        </div>
+        <div id="ai-text-refiner-password-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Inserts into the text box.</div>
+      </div>
+    </div>
+
     <div id="ai-text-refiner-buttons" style="display:flex; flex-wrap:wrap; gap:6px; padding-top:8px;"></div>
     <div style="display:flex; justify-content:flex-end; margin-top:10px;">
       <button id="ai-text-refiner-apply" style="background:#1f6feb; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:600;">Apply Result</button>
     </div>
     <div id="ai-text-refiner-count" style="margin-top:8px; font-size:11px; color:rgba(180,220,255,0.75);"></div>
-  <div id="ai-text-refiner-status" style="margin-top:4px; font-size:11px; color:rgba(255,255,255,0.7);"></div>
+    <div id="ai-text-refiner-status" style="margin-top:4px; font-size:11px; color:rgba(255,255,255,0.7);"></div>
   `;
 
   document.body.appendChild(wrapper);
@@ -244,7 +319,46 @@ function openPopupForElement(el, keyboardEvent) {
   textarea.value = currentText;
   textarea.focus();
   textarea.select();
+  const modelSelect = popup.querySelector("#ai-text-refiner-model");
+  const modelStatus = popup.querySelector("#ai-text-refiner-model-status");
+  const wordLimitInput = popup.querySelector("#ai-text-refiner-wordlimit");
+  const wordLimitStatus = popup.querySelector("#ai-text-refiner-wordlimit-status");
+  const genPasswordBtn = popup.querySelector("#ai-text-refiner-gen-password");
+  const passwordLengthInput = popup.querySelector("#ai-text-refiner-password-length");
+  const passwordStatus = popup.querySelector("#ai-text-refiner-password-status");
 
+  if (wordLimit !== null) {
+    wordLimitInput.value = wordLimit;
+    wordLimitStatus.textContent = `Limit set to ${wordLimit} words.`;
+  }
+
+  modelSelect.addEventListener("change", (event) => {
+    selectedModel = event.target.value;
+    chrome.storage.local?.set?.({ selectedModel });
+  });
+
+  wordLimitInput.addEventListener("input", (event) => {
+    const value = Number(event.target.value);
+    if (!value || value < 1) {
+      wordLimit = null;
+      wordLimitStatus.textContent = "Optional";
+      chrome.storage.local?.set?.({ wordLimit: null });
+      return;
+    }
+    wordLimit = value;
+    wordLimitStatus.textContent = `Limit set to ${value} words.`;
+    chrome.storage.local?.set?.({ wordLimit });
+  });
+
+  genPasswordBtn.addEventListener("click", () => {
+    const length = Number(passwordLengthInput.value) || 20;
+    const password = generatePassword(length);
+    textarea.value = password;
+    passwordStatus.textContent = "Password generated.";
+    updateCount(password);
+  });
+
+  loadModelsForPopup(modelSelect, modelStatus);
   positionPopup(keyboardEvent);
 }
 
