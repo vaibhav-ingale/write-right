@@ -20,26 +20,30 @@ const ollamaHeaders = {
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-const REFINE_PROMPTS = {
-  formal:
-    "Rewrite the following text in a more formal tone while preserving the meaning.\nRespond with only the rewritten text; do not add explanations, disclaimers, or extra wording.\n\n",
-  clarity:
-    "Rewrite the following text to improve clarity and readability.\nRespond with only the rewritten text; do not add explanations, disclaimers, or extra wording.\n\n",
-  concise:
-    "Make the following text shorter and more concise while keeping the main meaning.\nRespond with only the rewritten text; do not add explanations, disclaimers, or extra wording.\n\n",
-  elaborate:
-    "Expand the following text with more detail and explanation while preserving the original meaning.\nRespond with only the rewritten text; do not add explanations, disclaimers, or extra wording.\n\n",
-  grammar:
-    "Correct grammar, spelling, and punctuation in the following text.\nRespond with only the rewritten text; do not add explanations, disclaimers, or extra wording.\n\n",
-  simplify:
-    "Rewrite the following text using simpler words and clearer structure.\nRespond with only the rewritten text; do not add explanations, disclaimers, or extra wording.\n\n",
-  tone:
-    "Rewrite the following text with a more professional and positive tone.\nRespond with only the rewritten text; do not add explanations, disclaimers, or extra wording.\n\n"
+// System prompt: cacheable, contains common instructions
+const SYSTEM_PROMPT = `You are a professional writing assistant that refines and improves text.
+
+Core Instructions:
+- Return ONLY the refined text with no preamble, explanations, or meta-commentary
+- Preserve the original meaning and intent unless instructed otherwise
+- Do not use emojis or contractions (e.g., use "do not" instead of "don't")
+- Follow markdown formatting only if the input uses it; otherwise, use plain text
+- Apply any additional constraints (tone, style, audience, word limit) specified in the user message`;
+
+// Task-specific instructions: brief and focused
+const REFINE_TASKS = {
+  formal: "Rewrite this text in a formal, professional tone.",
+  clarity: "Improve the clarity and readability of this text.",
+  concise: "Make this text shorter and more concise while preserving key points.",
+  elaborate: "Expand this text with additional detail and explanation.",
+  grammar: "Correct all grammar, spelling, and punctuation errors.",
+  simplify: "Simplify this text using clearer language and structure.",
+  tone: "Adjust this text to a professional and positive tone."
 };
 
 function buildOllamaRequest(body) {
   // Support two formats:
-  // - { model, refinement, text }
+  // - { model, refinement, text, tone?, style?, audience?, purpose?, maxWords? }
   // - { model, messages: [...] }
   const model = body.model || "llama3";
   if (Array.isArray(body.messages)) {
@@ -48,32 +52,38 @@ function buildOllamaRequest(body) {
 
   const task = (body.refinement || "clarity").toLowerCase();
   const text = String(body.text || "").trim();
-  const promptPrefix = REFINE_PROMPTS[task] ?? REFINE_PROMPTS.clarity;
+  const taskInstruction = REFINE_TASKS[task] ?? REFINE_TASKS.clarity;
 
-  // Additional style guidance
-  const tone = body.tone ? String(body.tone).toLowerCase() : "";
-  const style = body.style ? String(body.style).toLowerCase() : "";
-  const audience = body.audience ? String(body.audience).toLowerCase() : "";
-  const purpose = body.purpose ? String(body.purpose).toLowerCase() : "";
+  // Build additional constraints (only if specified)
+  const constraints = [];
 
-  const tonePhrase = tone ? ` Use a ${tone} tone.` : "";
-  const stylePhrase = style ? ` Use a ${style} writing style.` : "";
-  const audiencePhrase = audience ? ` Target the response to ${audience}.` : "";
-  const purposePhrase = purpose ? ` The goal is to ${purpose}.` : "";
+  if (body.tone) {
+    constraints.push(`Tone: ${body.tone}`);
+  }
+  if (body.style) {
+    constraints.push(`Style: ${body.style}`);
+  }
+  if (body.audience) {
+    constraints.push(`Audience: ${body.audience}`);
+  }
+  if (body.purpose) {
+    constraints.push(`Purpose: ${body.purpose}`);
+  }
+  if (body.maxWords) {
+    constraints.push(`Word limit: ${body.maxWords} words maximum`);
+  }
 
-  const wordLimitPhrase = body.maxWords ? ` Limit the response to ${body.maxWords} words.` : "";
+  // Construct clean, structured user message
+  const constraintsSection = constraints.length > 0
+    ? `\n\nConstraints:\n${constraints.map(c => `- ${c}`).join('\n')}`
+    : '';
 
-  // Strict formatting rules
-  const formattingRules =
-    " Do not use emojis, markdown formatting, or contractions (e.g. use 'I am' not 'I'm').";
-
-  const additionalInstructions = `${tonePhrase}${stylePhrase}${audiencePhrase}${purposePhrase}`.trim();
-  const userContent = `${promptPrefix}${formattingRules}${additionalInstructions ? additionalInstructions + " " : ""}${text}${wordLimitPhrase}`;
+  const userContent = `${taskInstruction}${constraintsSection}\n\nText to refine:\n${text}`;
 
   return {
     model,
     messages: [
-      { role: "system", content: "You are a helpful writing assistant." },
+      { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userContent }
     ]
   };
@@ -143,8 +153,8 @@ app.get("/health", async (_, res) => {
   const testPayload = {
     model: "llama3",
     messages: [
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "Reply with a single word: Hello" }
+      { role: "system", content: "You are a helpful assistant. Respond concisely." },
+      { role: "user", content: "Reply with only the word: OK" }
     ]
   };
 

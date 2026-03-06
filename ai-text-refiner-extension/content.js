@@ -11,12 +11,13 @@ let currentText = "";
 let requireModifierShortcut = true; // can be toggled via the extension popup
 let selectedModel = "";
 let wordLimit = null;
-let selectedTone = "formal";
-let selectedStyle = "simple";
-let selectedAudience = "general";
-let selectedPurpose = "inform";
+let selectedTone = null;
+let selectedStyle = null;
+let selectedAudience = null;
+let selectedPurpose = null;
 
 const TONE_OPTIONS = [
+  { value: "", label: "None" },
   { value: "formal", label: "Formal" },
   { value: "casual", label: "Casual" },
   { value: "funny", label: "Funny" },
@@ -24,6 +25,7 @@ const TONE_OPTIONS = [
 ];
 
 const STYLE_OPTIONS = [
+  { value: "", label: "None" },
   { value: "simple", label: "Simple" },
   { value: "complex", label: "Complex" },
   { value: "persuasive", label: "Persuasive" },
@@ -31,6 +33,7 @@ const STYLE_OPTIONS = [
 ];
 
 const AUDIENCE_OPTIONS = [
+  { value: "", label: "None" },
   { value: "general", label: "General" },
   { value: "professionals", label: "Professionals" },
   { value: "students", label: "Students" },
@@ -38,6 +41,7 @@ const AUDIENCE_OPTIONS = [
 ];
 
 const PURPOSE_OPTIONS = [
+  { value: "", label: "None" },
   { value: "inform", label: "Inform" },
   { value: "request", label: "Request" },
   { value: "complain", label: "Complain" },
@@ -52,19 +56,19 @@ function loadSettings() {
       requireModifierShortcut: true,
       selectedModel: "",
       wordLimit: null,
-      selectedTone: "formal",
-      selectedStyle: "simple",
-      selectedAudience: "general",
-      selectedPurpose: "inform"
+      selectedTone: null,
+      selectedStyle: null,
+      selectedAudience: null,
+      selectedPurpose: null
     },
     (data) => {
       requireModifierShortcut = data.requireModifierShortcut;
       selectedModel = data.selectedModel || "";
       wordLimit = typeof data.wordLimit === "number" ? data.wordLimit : null;
-      selectedTone = data.selectedTone || "formal";
-      selectedStyle = data.selectedStyle || "simple";
-      selectedAudience = data.selectedAudience || "general";
-      selectedPurpose = data.selectedPurpose || "inform";
+      selectedTone = data.selectedTone || null;
+      selectedStyle = data.selectedStyle || null;
+      selectedAudience = data.selectedAudience || null;
+      selectedPurpose = data.selectedPurpose || null;
     }
   );
 }
@@ -83,16 +87,16 @@ function watchSettingsChanges() {
       wordLimit = changes.wordLimit.newValue;
     }
     if (changes.selectedTone) {
-      selectedTone = changes.selectedTone.newValue || "formal";
+      selectedTone = changes.selectedTone.newValue || null;
     }
     if (changes.selectedStyle) {
-      selectedStyle = changes.selectedStyle.newValue || "simple";
+      selectedStyle = changes.selectedStyle.newValue || null;
     }
     if (changes.selectedAudience) {
-      selectedAudience = changes.selectedAudience.newValue || "general";
+      selectedAudience = changes.selectedAudience.newValue || null;
     }
     if (changes.selectedPurpose) {
-      selectedPurpose = changes.selectedPurpose.newValue || "inform";
+      selectedPurpose = changes.selectedPurpose.newValue || null;
     }
   });
 }
@@ -155,28 +159,6 @@ function setTextToElement(el, text) {
 
     return;
   }
-}
-
-function generatePassword(length = 20, includeNumbers = true, includeSymbols = true) {
-  let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  if (includeNumbers) {
-    chars += "0123456789";
-  }
-  if (includeSymbols) {
-    chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
-  }
-
-  // Ensure there's at least one character type available.
-  if (!chars) {
-    return "";
-  }
-
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    const idx = Math.floor(Math.random() * chars.length);
-    result += chars[idx];
-  }
-  return result;
 }
 
 async function loadModelsForPopup(selectEl, statusEl) {
@@ -295,7 +277,7 @@ function createPopup() {
     </style>
 
     <div id="ai-text-refiner-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; padding-bottom: 8px;">
-      <div style="font-weight:600; font-size:14px;">AI Text Refiner</div>
+      <div style="font-weight:600; font-size:14px;">Write Right - AI Text Refiner</div>
       <button id="ai-text-refiner-close" style="background:transparent; border:none; color:rgba(255,255,255,0.7); font-size:18px; cursor:pointer;">×</button>
     </div>
     <textarea id="ai-text-refiner-input" style="width:100%; height:140px; resize:vertical; border-radius:8px; border:1px solid rgba(255,255,255,0.18); padding:8px; background:rgba(0,0,0,0.45); color:#fff; outline:none; font-size:13px;" spellcheck="true"></textarea>
@@ -317,30 +299,6 @@ function createPopup() {
         <div id="ai-text-refiner-wordlimit-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Optional</div>
       </div>
       <div style="flex:1 1 180px; min-width:160px;">
-        <label style="font-size:11px; opacity:0.75;">Password</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input id="ai-text-refiner-password-length" type="number" min="8" max="64" value="20" style="flex:1; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
-
-          <div style="display:flex; align-items:center; gap:6px;">
-            <label class="switch">
-              <input id="ai-text-refiner-password-numbers" type="checkbox" checked />
-              <span class="slider round"></span>
-            </label>
-            <span style="font-size:11px; opacity:0.85;">Numbers</span>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:6px;">
-            <label class="switch">
-              <input id="ai-text-refiner-password-symbols" type="checkbox" checked />
-              <span class="slider round"></span>
-            </label>
-            <span style="font-size:11px; opacity:0.85;">Symbols</span>
-          </div>
-
-          <button id="ai-text-refiner-gen-password" style="height:34px; padding:0 12px; border-radius:8px; border:none; background:rgba(31,111,235,0.9); color:#fff; cursor:pointer;">Generate</button>
-        </div>
-        <div id="ai-text-refiner-password-status" style="font-size:10px; opacity:0.7; margin-top:6px;">Inserts into the text box.</div>
-
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
           <div style="display:flex; gap:6px; align-items:center;">
             <div style="font-size:11px; opacity:0.75; width:70px;">Tone</div>
@@ -497,11 +455,6 @@ function openPopupForElement(el, keyboardEvent) {
   const modelStatus = popup.querySelector("#ai-text-refiner-model-status");
   const wordLimitInput = popup.querySelector("#ai-text-refiner-wordlimit");
   const wordLimitStatus = popup.querySelector("#ai-text-refiner-wordlimit-status");
-  const genPasswordBtn = popup.querySelector("#ai-text-refiner-gen-password");
-  const passwordLengthInput = popup.querySelector("#ai-text-refiner-password-length");
-  const numbersToggle = popup.querySelector("#ai-text-refiner-password-numbers");
-  const symbolsToggle = popup.querySelector("#ai-text-refiner-password-symbols");
-  const passwordStatus = popup.querySelector("#ai-text-refiner-password-status");
   const toneOptions = popup.querySelector("#ai-text-refiner-tone-options");
   const styleOptions = popup.querySelector("#ai-text-refiner-style-options");
   const audienceOptions = popup.querySelector("#ai-text-refiner-audience-options");
@@ -510,12 +463,14 @@ function openPopupForElement(el, keyboardEvent) {
   const createOptionButtons = (container, options, selectedValue, onSelect) => {
     if (!container) return;
     container.innerHTML = "";
+    const activeValue = selectedValue ?? "";
     options.forEach((opt) => {
       const btn = document.createElement("button");
       btn.textContent = opt.label;
       btn.dataset.value = opt.value;
-      btn.style.background = opt.value === selectedValue ? "rgba(31,111,235,0.9)" : "rgba(255,255,255,0.1)";
-      btn.style.color = opt.value === selectedValue ? "#fff" : "rgba(255,255,255,0.8)";
+      const isActive = opt.value === activeValue;
+      btn.style.background = isActive ? "rgba(31,111,235,0.9)" : "rgba(255,255,255,0.1)";
+      btn.style.color = isActive ? "#fff" : "rgba(255,255,255,0.8)";
       btn.style.border = "1px solid rgba(255,255,255,0.18)";
       btn.style.borderRadius = "8px";
       btn.style.padding = "4px 10px";
@@ -552,11 +507,6 @@ function openPopupForElement(el, keyboardEvent) {
     chrome.storage.local?.set?.({ wordLimit });
   });
 
-  const getPasswordOptions = () => ({
-    includeNumbers: !!numbersToggle?.checked,
-    includeSymbols: !!symbolsToggle?.checked
-  });
-
   const saveSettings = () => {
     chrome.storage.local?.set?.({
       selectedModel,
@@ -568,31 +518,35 @@ function openPopupForElement(el, keyboardEvent) {
     });
   };
 
-
-  genPasswordBtn.addEventListener("click", () => {
-    const length = Number(passwordLengthInput.value) || 20;
-    const { includeNumbers, includeSymbols } = getPasswordOptions();
-    const password = generatePassword(length, includeNumbers, includeSymbols);
-    textarea.value = password;
-    passwordStatus.textContent = "Password generated.";
-    updateCount(password);
-  });
-
   const renderOptionGroups = () => {
     createOptionButtons(toneOptions, TONE_OPTIONS, selectedTone, (value) => {
-      selectedTone = value;
+      selectedTone = value || null;
       saveSettings();
     });
     createOptionButtons(styleOptions, STYLE_OPTIONS, selectedStyle, (value) => {
-      selectedStyle = value;
+      selectedStyle = value || null;
       saveSettings();
     });
     createOptionButtons(audienceOptions, AUDIENCE_OPTIONS, selectedAudience, (value) => {
-      selectedAudience = value;
+      selectedAudience = value || null;
       saveSettings();
     });
     createOptionButtons(purposeOptions, PURPOSE_OPTIONS, selectedPurpose, (value) => {
-      selectedPurpose = value;
+      selectedPurpose = value || null;
+
+      // If user chooses 'None' for purpose, clear any word-limit to avoid implicit constraints.
+      if (!value) {
+        wordLimit = null;
+        const wordLimitInput = popup.querySelector("#ai-text-refiner-wordlimit");
+        const wordLimitStatus = popup.querySelector("#ai-text-refiner-wordlimit-status");
+        if (wordLimitInput) {
+          wordLimitInput.value = "";
+        }
+        if (wordLimitStatus) {
+          wordLimitStatus.textContent = "Optional";
+        }
+      }
+
       saveSettings();
     });
   };
@@ -728,11 +682,6 @@ function onClick(e) {
   closePopup();
 }
 
-chrome.runtime.onMessage.addListener((message) => {
-  if (message?.type === "INSERT_PASSWORD" && activeElement) {
-    setTextToElement(activeElement, message.password);
-  }
-});
 
 window.addEventListener("keydown", onKeydown, true);
 window.addEventListener("mousedown", onClick, true);

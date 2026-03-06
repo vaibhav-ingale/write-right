@@ -5,9 +5,6 @@ const modelSelect = document.getElementById("modelSelect");
 const modelStatus = document.getElementById("modelStatus");
 const wordLimitInput = document.getElementById("wordLimit");
 const wordLimitStatus = document.getElementById("wordLimitStatus");
-const passwordLengthInput = document.getElementById("passwordLength");
-const generatePasswordBtn = document.getElementById("generatePassword");
-const passwordStatus = document.getElementById("passwordStatus");
 const wordCountStatus = document.createElement("div");
 
 const BACKEND_BASE = "http://localhost:8000";
@@ -152,28 +149,6 @@ wordLimitInput.addEventListener("input", (e) => {
   setWordLimit(value);
 });
 
-generatePasswordBtn.addEventListener("click", () => {
-  const length = Number(passwordLengthInput.value) || 20;
-  const password = generatePassword(length);
-  passwordStatus.textContent = "Password generated — pasted into text box.";
-
-  // Send message to content script to insert into current field.
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs[0]?.id) return;
-    chrome.tabs.sendMessage(tabs[0].id, { type: "INSERT_PASSWORD", password });
-  });
-});
-
-function generatePassword(length = 20) {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    const idx = Math.floor(Math.random() * chars.length);
-    result += chars[idx];
-  }
-  return result;
-}
 
 checkBtn.addEventListener("click", checkBackend);
 serverLink.addEventListener("click", (e) => {
