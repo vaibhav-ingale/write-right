@@ -7,6 +7,27 @@ const API_ENDPOINT = "http://localhost:8000/v1/chat/completions";
 let activeElement = null;
 let popup = null;
 let currentText = "";
+let requireModifierShortcut = true; // can be toggled via the extension popup
+
+function loadSettings() {
+  if (!chrome?.storage?.local) return;
+  chrome.storage.local.get({ requireModifierShortcut: true }, (data) => {
+    requireModifierShortcut = data.requireModifierShortcut;
+  });
+}
+
+function watchSettingsChanges() {
+  if (!chrome?.storage?.onChanged) return;
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+    if (changes.requireModifierShortcut) {
+      requireModifierShortcut = changes.requireModifierShortcut.newValue;
+    }
+  });
+}
+
+loadSettings();
+watchSettingsChanges();
 
 function isEditable(el) {
   if (!el) return false;
@@ -17,12 +38,32 @@ function isEditable(el) {
 
 function getTextFromElement(el) {
   if (!el) return "";
+
+  // Prefer selected text when available, falling back to full value.
+  if (el.tagName?.toLowerCase() === "input" || el.tagName?.toLowerCase() === "textarea") {
+    const value = el.value;
+    const selectionStart = el.selectionStart;
+    const selectionEnd = el.selectionEnd;
+    if (typeof selectionStart === "number" && typeof selectionEnd === "number" && selectionStart !== selectionEnd) {
+      return value.slice(selectionStart, selectionEnd);
+    }
+    return value;
+  }
+
   if (el.isContentEditable) {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount) {
+      const range = selection.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer)) {
+        const selectedText = selection.toString();
+        if (selectedText.trim()) {
+          return selectedText;
+        }
+      }
+    }
     return el.innerText;
   }
-  if (el.tagName?.toLowerCase() === "input" || el.tagName?.toLowerCase() === "textarea") {
-    return el.value;
-  }
+
   return "";
 }
 
@@ -241,7 +282,6 @@ async function runRefinement(task) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "llama3",
         refinement: task,
         text
       })
@@ -276,6 +316,11 @@ function applyResult() {
 function onKeydown(e) {
   if (e.key !== REFINE_SHORTCUT_KEY) return;
   if (!isEditable(e.target)) return;
+
+  const hasModifier = e.ctrlKey || e.metaKey;
+  if (requireModifierShortcut && !hasModifier) return;
+
+  // Prevent the backslash from being inserted into the focused field when this key opens the popup.
   e.preventDefault();
   openPopupForElement(e.target, e);
 }

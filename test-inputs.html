@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Text Refiner - Input Test Page</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 24px;
+      max-width: 900px;
+      line-height: 1.6;
+    }
+
+    fieldset {
+      margin-bottom: 20px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: rgba(240,240,240,0.7);
+    }
+
+    legend {
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input, textarea, .editable {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid rgba(0,0,0,0.2);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      min-height: 36px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .editable {
+      min-height: 100px;
+      background: #fff;
+    }
+
+    .note {
+      opacity: 0.75;
+      font-size: 13px;
+      margin-top: -6px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Text Refiner — Input Test Page</h1>
+  <p>Use this page to test the extension behavior against a wide range of editable elements.</p>
+
+  <fieldset>
+    <legend>Text Inputs</legend>
+
+    <label for="text-input">Text input</label>
+    <input id="text-input" type="text" value="This is a plain text input" />
+
+    <label for="email-input">Email input</label>
+    <input id="email-input" type="email" value="user@example.com" />
+
+    <label for="password-input">Password input</label>
+    <input id="password-input" type="password" value="mypassword" />
+
+    <label for="url-input">URL input</label>
+    <input id="url-input" type="url" value="https://example.com" />
+
+    <label for="search-input">Search input</label>
+    <input id="search-input" type="search" value="Search term" />
+
+    <label for="tel-input">Telephone input</label>
+    <input id="tel-input" type="tel" value="+1 555 123 4567" />
+  </fieldset>
+
+  <fieldset>
+    <legend>Textarea</legend>
+    <label for="standard-textarea">Standard textarea</label>
+    <textarea id="standard-textarea">This is a standard textarea. You can type multiple lines here.</textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Contenteditable elements</legend>
+
+    <label for="editable-div">Editable div (contenteditable)</label>
+    <div id="editable-div" class="editable" contenteditable="true">This is a contenteditable DIV. Try typing here.</div>
+    <div class="note">The extension should recognize this as an editable field.</div>
+
+    <label for="editable-paragraph">Editable paragraph (contenteditable)</label>
+    <p id="editable-paragraph" class="editable" contenteditable="true">This is an editable paragraph. It behaves like a text field but is rendered as a paragraph.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Other editable targets</legend>
+
+    <label for="role-textbox">Role=textbox (ARIA)</label>
+    <div id="role-textbox" class="editable" role="textbox" tabindex="0">This element has role="textbox" and is focusable.</div>
+    <div class="note">If the extension works for this, it is detecting editable content broadly.</div>
+
+    <label for="disabled-input">Disabled input (should not be editable)</label>
+    <input id="disabled-input" type="text" value="Cannot edit this" disabled />
+  </fieldset>
+
+  <p>TIP: Focus an editable element and press <strong>Ctrl + \</strong> (or <strong>Cmd + \</strong> on macOS) if modifier mode is enabled.</p>
+</body>
+</html>

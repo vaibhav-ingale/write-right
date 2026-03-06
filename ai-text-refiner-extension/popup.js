@@ -11,7 +11,6 @@ async function checkBackend() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama3",
         refinement: "clarity",
         text: "Hello from AI Text Refiner"
       })
@@ -30,8 +29,28 @@ async function checkBackend() {
   }
 }
 
+const modifierToggle = document.getElementById("modifierToggle");
+
+function loadSettings() {
+  if (!chrome?.storage?.local) return;
+  chrome.storage.local.get({ requireModifierShortcut: true }, (data) => {
+    modifierToggle.checked = Boolean(data.requireModifierShortcut);
+  });
+}
+
+function setModifierSetting(enabled) {
+  if (!chrome?.storage?.local) return;
+  chrome.storage.local.set({ requireModifierShortcut: enabled });
+}
+
+modifierToggle.addEventListener("change", (e) => {
+  setModifierSetting(e.target.checked);
+});
+
 checkBtn.addEventListener("click", checkBackend);
 serverLink.addEventListener("click", (e) => {
   e.preventDefault();
   checkBackend();
 });
+
+loadSettings();

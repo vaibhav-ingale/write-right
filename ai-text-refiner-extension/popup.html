@@ -44,6 +44,10 @@
   <body>
     <h1>AI Text Refiner</h1>
     <p>Press <strong>\</strong> inside a textbox to open the popup UI and refine text with a local LLM.</p>
+    <label style="display:flex; align-items:center; gap:6px; margin-bottom:10px; font-size:12px;">
+      <input type="checkbox" id="modifierToggle" />
+      Require <strong>Ctrl</strong> / <strong>Cmd</strong> + <strong>\</strong> to open (recommended)
+    </label>
     <button id="check">Check backend</button>
     <div class="status" id="status"></div>
     <div style="margin-top: 14px; font-size: 11px; opacity: 0.75;">
