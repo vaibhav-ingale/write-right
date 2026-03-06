@@ -8,11 +8,13 @@ let activeElement = null;
 let popup = null;
 let currentText = "";
 let requireModifierShortcut = true; // can be toggled via the extension popup
+let selectedModel = "";
 
 function loadSettings() {
   if (!chrome?.storage?.local) return;
-  chrome.storage.local.get({ requireModifierShortcut: true }, (data) => {
+  chrome.storage.local.get({ requireModifierShortcut: true, selectedModel: "" }, (data) => {
     requireModifierShortcut = data.requireModifierShortcut;
+    selectedModel = data.selectedModel || "";
   });
 }
 
@@ -22,6 +24,9 @@ function watchSettingsChanges() {
     if (area !== "local") return;
     if (changes.requireModifierShortcut) {
       requireModifierShortcut = changes.requireModifierShortcut.newValue;
+    }
+    if (changes.selectedModel) {
+      selectedModel = changes.selectedModel.newValue || "";
     }
   });
 }
@@ -276,15 +281,17 @@ async function runRefinement(task) {
   setStatus("Refining...", false);
 
   try {
+    const payload = { refinement: task, text };
+    if (selectedModel) {
+      payload.model = selectedModel;
+    }
+
     const response = await fetch(API_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        refinement: task,
-        text
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
@@ -292,8 +299,8 @@ async function runRefinement(task) {
       throw new Error(`${response.status} ${response.statusText}: ${errorText}`);
     }
 
-    const payload = await response.json();
-    const refined = (payload?.choices?.[0]?.message?.content) || payload?.result || "";
+    const responseData = await response.json();
+    const refined = (responseData?.choices?.[0]?.message?.content) || responseData?.result || "";
     if (!refined) {
       throw new Error("No refined text received from the backend");
     }

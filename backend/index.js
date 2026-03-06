@@ -1,9 +1,21 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 
+dotenv.config();
+
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 8000;
-const ollamaUrl = process.env.OLLAMA_URL || "http://127.0.0.1:11434/v1/chat/completions";
+
+// Ollama base URL (for tags/model list) and the chat completions endpoint.
+const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
+const ollamaUrl = process.env.OLLAMA_URL || `${ollamaBaseUrl}/v1/chat/completions`;
+const ollamaApiKey = process.env.OLLAMA_API_KEY || "";
+
+const ollamaHeaders = {
+  "Content-Type": "application/json",
+  ...(ollamaApiKey ? { Authorization: `Bearer ${ollamaApiKey}` } : {})
+};
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -59,9 +71,7 @@ app.post("/v1/chat/completions", async (req, res) => {
   try {
     const response = await fetch(ollamaUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: ollamaHeaders,
       body: JSON.stringify(payload)
     });
 
@@ -76,6 +86,34 @@ app.post("/v1/chat/completions", async (req, res) => {
   } catch (err) {
     console.error("Failed to contact Ollama:", err);
     res.status(502).json({ error: "Failed to contact local Ollama instance.", details: err.message });
+  }
+});
+
+app.get("/v1/models", async (_, res) => {
+  // Fetch model list from Ollama (v1/models endpoint).
+  try {
+    const response = await fetch(`${ollamaBaseUrl}/v1/models`, {
+      headers: ollamaHeaders
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data });
+    }
+
+    // Ollama v1/models returns an object like:
+    // { object: "list", data: [{ id: "llama3:latest", ... }, ...] }
+    const models = Array.isArray(data?.data)
+      ? data.data.map((m) => m.id).filter(Boolean)
+      : [];
+
+    return res.json({ models });
+  } catch (err) {
+    console.error("Failed to fetch model list from Ollama:", err);
+    return res.status(502).json({
+      error: "Failed to fetch model list from Ollama.",
+      details: err.message
+    });
   }
 });
 

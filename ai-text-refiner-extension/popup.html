@@ -48,6 +48,13 @@
       <input type="checkbox" id="modifierToggle" />
       Require <strong>Ctrl</strong> / <strong>Cmd</strong> + <strong>\</strong> to open (recommended)
     </label>
+
+    <label style="display:flex; flex-direction:column; gap:4px; font-size:12px; margin-bottom:10px;">
+      <span style="font-weight:600;">Model</span>
+      <select id="modelSelect" style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35); color: #fff;"></select>
+      <span id="modelStatus" style="font-size:11px; opacity:0.75;">Loading available models...</span>
+    </label>
+
     <button id="check">Check backend</button>
     <div class="status" id="status"></div>
     <div style="margin-top: 14px; font-size: 11px; opacity: 0.75;">
