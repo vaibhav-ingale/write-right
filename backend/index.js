@@ -49,8 +49,26 @@ function buildOllamaRequest(body) {
   const task = (body.refinement || "clarity").toLowerCase();
   const text = String(body.text || "").trim();
   const promptPrefix = REFINE_PROMPTS[task] ?? REFINE_PROMPTS.clarity;
+
+  // Additional style guidance
+  const tone = body.tone ? String(body.tone).toLowerCase() : "";
+  const style = body.style ? String(body.style).toLowerCase() : "";
+  const audience = body.audience ? String(body.audience).toLowerCase() : "";
+  const purpose = body.purpose ? String(body.purpose).toLowerCase() : "";
+
+  const tonePhrase = tone ? ` Use a ${tone} tone.` : "";
+  const stylePhrase = style ? ` Use a ${style} writing style.` : "";
+  const audiencePhrase = audience ? ` Target the response to ${audience}.` : "";
+  const purposePhrase = purpose ? ` The goal is to ${purpose}.` : "";
+
   const wordLimitPhrase = body.maxWords ? ` Limit the response to ${body.maxWords} words.` : "";
-  const userContent = `${promptPrefix}${text}${wordLimitPhrase}`;
+
+  // Strict formatting rules
+  const formattingRules =
+    " Do not use emojis, markdown formatting, or contractions (e.g. use 'I am' not 'I'm').";
+
+  const additionalInstructions = `${tonePhrase}${stylePhrase}${audiencePhrase}${purposePhrase}`.trim();
+  const userContent = `${promptPrefix}${formattingRules}${additionalInstructions ? additionalInstructions + " " : ""}${text}${wordLimitPhrase}`;
 
   return {
     model,
@@ -70,9 +88,10 @@ app.post("/v1/chat/completions", async (req, res) => {
   const payload = buildOllamaRequest(requestBody);
 
   try {
+    const sessionHeader = { "X-Session-ID": `write-right-${Date.now()}` };
     const response = await fetch(ollamaUrl, {
       method: "POST",
-      headers: ollamaHeaders,
+      headers: { ...ollamaHeaders, ...sessionHeader },
       body: JSON.stringify(payload)
     });
 
@@ -93,8 +112,9 @@ app.post("/v1/chat/completions", async (req, res) => {
 app.get("/v1/models", async (_, res) => {
   // Fetch model list from Ollama (v1/models endpoint).
   try {
+    const sessionHeader = { "X-Session-ID": `write-right-${Date.now()}` };
     const response = await fetch(`${ollamaBaseUrl}/v1/models`, {
-      headers: ollamaHeaders
+      headers: { ...ollamaHeaders, ...sessionHeader }
     });
     const data = await response.json();
 

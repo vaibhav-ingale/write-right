@@ -25,7 +25,7 @@ async function checkBackend() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         refinement: "clarity",
-        text: "Hello from AI Text Refiner"
+        text: "Hello from Write Right"
       })
     });
 

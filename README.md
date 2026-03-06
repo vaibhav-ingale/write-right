@@ -1,4 +1,4 @@
-# AI Text Refiner (Chrome Extension + Local Backend)
+# Write Right (Chrome Extension + Local Backend)
 
 ## _Create a fast, privacy-first AI writing assistant that works everywhere on the web without sending data to the cloud._
 

@@ -1,4 +1,4 @@
-// AI Text Refiner content script
+// Write Right content script
 // Listens for `\` (backslash) key while focus is inside editable element, then shows a floating UI.
 
 const REFINE_SHORTCUT_KEY = "\\";
@@ -11,15 +11,60 @@ let currentText = "";
 let requireModifierShortcut = true; // can be toggled via the extension popup
 let selectedModel = "";
 let wordLimit = null;
+let selectedTone = "formal";
+let selectedStyle = "simple";
+let selectedAudience = "general";
+let selectedPurpose = "inform";
+
+const TONE_OPTIONS = [
+  { value: "formal", label: "Formal" },
+  { value: "casual", label: "Casual" },
+  { value: "funny", label: "Funny" },
+  { value: "sarcastic", label: "Sarcastic" }
+];
+
+const STYLE_OPTIONS = [
+  { value: "simple", label: "Simple" },
+  { value: "complex", label: "Complex" },
+  { value: "persuasive", label: "Persuasive" },
+  { value: "narrative", label: "Narrative" }
+];
+
+const AUDIENCE_OPTIONS = [
+  { value: "general", label: "General" },
+  { value: "professionals", label: "Professionals" },
+  { value: "students", label: "Students" },
+  { value: "customers", label: "Customers" }
+];
+
+const PURPOSE_OPTIONS = [
+  { value: "inform", label: "Inform" },
+  { value: "request", label: "Request" },
+  { value: "complain", label: "Complain" },
+  { value: "persuade", label: "Persuade" },
+  { value: "appreciate", label: "Appreciate" }
+];
 
 function loadSettings() {
   if (!chrome?.storage?.local) return;
   chrome.storage.local.get(
-    { requireModifierShortcut: true, selectedModel: "", wordLimit: null },
+    {
+      requireModifierShortcut: true,
+      selectedModel: "",
+      wordLimit: null,
+      selectedTone: "formal",
+      selectedStyle: "simple",
+      selectedAudience: "general",
+      selectedPurpose: "inform"
+    },
     (data) => {
       requireModifierShortcut = data.requireModifierShortcut;
       selectedModel = data.selectedModel || "";
       wordLimit = typeof data.wordLimit === "number" ? data.wordLimit : null;
+      selectedTone = data.selectedTone || "formal";
+      selectedStyle = data.selectedStyle || "simple";
+      selectedAudience = data.selectedAudience || "general";
+      selectedPurpose = data.selectedPurpose || "inform";
     }
   );
 }
@@ -36,6 +81,18 @@ function watchSettingsChanges() {
     }
     if (changes.wordLimit) {
       wordLimit = changes.wordLimit.newValue;
+    }
+    if (changes.selectedTone) {
+      selectedTone = changes.selectedTone.newValue || "formal";
+    }
+    if (changes.selectedStyle) {
+      selectedStyle = changes.selectedStyle.newValue || "simple";
+    }
+    if (changes.selectedAudience) {
+      selectedAudience = changes.selectedAudience.newValue || "general";
+    }
+    if (changes.selectedPurpose) {
+      selectedPurpose = changes.selectedPurpose.newValue || "inform";
     }
   });
 }
@@ -283,6 +340,25 @@ function createPopup() {
           <button id="ai-text-refiner-gen-password" style="height:34px; padding:0 12px; border-radius:8px; border:none; background:rgba(31,111,235,0.9); color:#fff; cursor:pointer;">Generate</button>
         </div>
         <div id="ai-text-refiner-password-status" style="font-size:10px; opacity:0.7; margin-top:6px;">Inserts into the text box.</div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="font-size:11px; opacity:0.75; width:70px;">Tone</div>
+            <div id="ai-text-refiner-tone-options" style="display:flex; gap:6px;"></div>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="font-size:11px; opacity:0.75; width:70px;">Style</div>
+            <div id="ai-text-refiner-style-options" style="display:flex; gap:6px;"></div>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="font-size:11px; opacity:0.75; width:70px;">Audience</div>
+            <div id="ai-text-refiner-audience-options" style="display:flex; gap:6px;"></div>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="font-size:11px; opacity:0.75; width:70px;">Purpose</div>
+            <div id="ai-text-refiner-purpose-options" style="display:flex; gap:6px;"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -426,6 +502,32 @@ function openPopupForElement(el, keyboardEvent) {
   const numbersToggle = popup.querySelector("#ai-text-refiner-password-numbers");
   const symbolsToggle = popup.querySelector("#ai-text-refiner-password-symbols");
   const passwordStatus = popup.querySelector("#ai-text-refiner-password-status");
+  const toneOptions = popup.querySelector("#ai-text-refiner-tone-options");
+  const styleOptions = popup.querySelector("#ai-text-refiner-style-options");
+  const audienceOptions = popup.querySelector("#ai-text-refiner-audience-options");
+  const purposeOptions = popup.querySelector("#ai-text-refiner-purpose-options");
+
+  const createOptionButtons = (container, options, selectedValue, onSelect) => {
+    if (!container) return;
+    container.innerHTML = "";
+    options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.textContent = opt.label;
+      btn.dataset.value = opt.value;
+      btn.style.background = opt.value === selectedValue ? "rgba(31,111,235,0.9)" : "rgba(255,255,255,0.1)";
+      btn.style.color = opt.value === selectedValue ? "#fff" : "rgba(255,255,255,0.8)";
+      btn.style.border = "1px solid rgba(255,255,255,0.18)";
+      btn.style.borderRadius = "8px";
+      btn.style.padding = "4px 10px";
+      btn.style.fontSize = "11px";
+      btn.style.cursor = "pointer";
+      btn.addEventListener("click", () => {
+        onSelect(opt.value);
+        createOptionButtons(container, options, opt.value, onSelect);
+      });
+      container.appendChild(btn);
+    });
+  };
 
   if (wordLimit !== null) {
     wordLimitInput.value = wordLimit;
@@ -455,6 +557,17 @@ function openPopupForElement(el, keyboardEvent) {
     includeSymbols: !!symbolsToggle?.checked
   });
 
+  const saveSettings = () => {
+    chrome.storage.local?.set?.({
+      selectedModel,
+      wordLimit,
+      selectedTone,
+      selectedStyle,
+      selectedAudience,
+      selectedPurpose
+    });
+  };
+
 
   genPasswordBtn.addEventListener("click", () => {
     const length = Number(passwordLengthInput.value) || 20;
@@ -465,6 +578,26 @@ function openPopupForElement(el, keyboardEvent) {
     updateCount(password);
   });
 
+  const renderOptionGroups = () => {
+    createOptionButtons(toneOptions, TONE_OPTIONS, selectedTone, (value) => {
+      selectedTone = value;
+      saveSettings();
+    });
+    createOptionButtons(styleOptions, STYLE_OPTIONS, selectedStyle, (value) => {
+      selectedStyle = value;
+      saveSettings();
+    });
+    createOptionButtons(audienceOptions, AUDIENCE_OPTIONS, selectedAudience, (value) => {
+      selectedAudience = value;
+      saveSettings();
+    });
+    createOptionButtons(purposeOptions, PURPOSE_OPTIONS, selectedPurpose, (value) => {
+      selectedPurpose = value;
+      saveSettings();
+    });
+  };
+
+  renderOptionGroups();
   loadModelsForPopup(modelSelect, modelStatus);
   positionPopup(keyboardEvent);
 }
@@ -517,6 +650,18 @@ async function runRefinement(task) {
     }
     if (wordLimit && Number.isFinite(wordLimit)) {
       payload.maxWords = Number(wordLimit);
+    }
+    if (selectedTone) {
+      payload.tone = selectedTone;
+    }
+    if (selectedStyle) {
+      payload.style = selectedStyle;
+    }
+    if (selectedAudience) {
+      payload.audience = selectedAudience;
+    }
+    if (selectedPurpose) {
+      payload.purpose = selectedPurpose;
     }
 
     const response = await fetch(API_ENDPOINT, {
