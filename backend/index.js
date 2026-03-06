@@ -49,7 +49,8 @@ function buildOllamaRequest(body) {
   const task = (body.refinement || "clarity").toLowerCase();
   const text = String(body.text || "").trim();
   const promptPrefix = REFINE_PROMPTS[task] ?? REFINE_PROMPTS.clarity;
-  const userContent = `${promptPrefix}${text}`;
+  const wordLimitPhrase = body.maxWords ? ` Limit the response to ${body.maxWords} words.` : "";
+  const userContent = `${promptPrefix}${text}${wordLimitPhrase}`;
 
   return {
     model,

@@ -9,13 +9,18 @@ let popup = null;
 let currentText = "";
 let requireModifierShortcut = true; // can be toggled via the extension popup
 let selectedModel = "";
+let wordLimit = null;
 
 function loadSettings() {
   if (!chrome?.storage?.local) return;
-  chrome.storage.local.get({ requireModifierShortcut: true, selectedModel: "" }, (data) => {
-    requireModifierShortcut = data.requireModifierShortcut;
-    selectedModel = data.selectedModel || "";
-  });
+  chrome.storage.local.get(
+    { requireModifierShortcut: true, selectedModel: "", wordLimit: null },
+    (data) => {
+      requireModifierShortcut = data.requireModifierShortcut;
+      selectedModel = data.selectedModel || "";
+      wordLimit = typeof data.wordLimit === "number" ? data.wordLimit : null;
+    }
+  );
 }
 
 function watchSettingsChanges() {
@@ -27,6 +32,9 @@ function watchSettingsChanges() {
     }
     if (changes.selectedModel) {
       selectedModel = changes.selectedModel.newValue || "";
+    }
+    if (changes.wordLimit) {
+      wordLimit = changes.wordLimit.newValue;
     }
   });
 }
@@ -121,7 +129,8 @@ function createPopup() {
     <div style="display:flex; justify-content:flex-end; margin-top:10px;">
       <button id="ai-text-refiner-apply" style="background:#1f6feb; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:600;">Apply Result</button>
     </div>
-    <div id="ai-text-refiner-status" style="margin-top:8px; font-size:11px; color:rgba(255,255,255,0.7);"></div>
+    <div id="ai-text-refiner-count" style="margin-top:8px; font-size:11px; color:rgba(180,220,255,0.75);"></div>
+  <div id="ai-text-refiner-status" style="margin-top:4px; font-size:11px; color:rgba(255,255,255,0.7);"></div>
   `;
 
   document.body.appendChild(wrapper);
@@ -285,6 +294,9 @@ async function runRefinement(task) {
     if (selectedModel) {
       payload.model = selectedModel;
     }
+    if (wordLimit && Number.isFinite(wordLimit)) {
+      payload.maxWords = Number(wordLimit);
+    }
 
     const response = await fetch(API_ENDPOINT, {
       method: "POST",
@@ -306,11 +318,22 @@ async function runRefinement(task) {
     }
 
     textarea.value = refined;
+    updateCount(refined);
     setStatus("Refinement complete. Click Apply to replace the text.", false);
   } catch (err) {
     console.error(err);
     setStatus(`Error: ${err.message}`, true);
   }
+}
+
+function updateCount(text) {
+  if (!popup) return;
+  const countEl = popup.querySelector("#ai-text-refiner-count");
+  if (!countEl) return;
+
+  const charCount = text.length;
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  countEl.textContent = `Words: ${wordCount} · Characters: ${charCount}`;
 }
 
 function applyResult() {
@@ -338,6 +361,12 @@ function onClick(e) {
   if (popup.contains(e.target)) return;
   closePopup();
 }
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type === "INSERT_PASSWORD" && activeElement) {
+    setTextToElement(activeElement, message.password);
+  }
+});
 
 window.addEventListener("keydown", onKeydown, true);
 window.addEventListener("mousedown", onClick, true);

@@ -55,6 +55,21 @@
       <span id="modelStatus" style="font-size:11px; opacity:0.75;">Loading available models...</span>
     </label>
 
+    <label style="display:flex; flex-direction:column; gap:4px; font-size:12px; margin-bottom:10px;">
+      <span style="font-weight:600;">Word limit (optional)</span>
+      <input id="wordLimit" type="number" min="1" placeholder="e.g. 400" style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35); color: #fff;" />
+      <span id="wordLimitStatus" style="font-size:11px; opacity:0.75;">Leave empty for no limit.</span>
+    </label>
+
+    <label style="display:flex; flex-direction:column; gap:4px; font-size:12px; margin-bottom:10px;">
+      <span style="font-weight:600;">Password generator</span>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="passwordLength" type="number" min="8" max="64" value="20" style="flex:1; padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35); color: #fff;" />
+        <button id="generatePassword" style="flex:0 0 auto;">Generate</button>
+      </div>
+      <span id="passwordStatus" style="font-size:11px; opacity:0.75;">Generate a strong password and paste it into the text box.</span>
+    </label>
+
     <button id="check">Check backend</button>
     <div class="status" id="status"></div>
     <div style="margin-top: 14px; font-size: 11px; opacity: 0.75;">
