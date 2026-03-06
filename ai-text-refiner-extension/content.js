@@ -112,16 +112,66 @@ function setTextToElement(el, text) {
   if (!el) return;
 
   if (el.isContentEditable) {
-    el.innerText = text;
+    // For contentEditable elements (like LinkedIn chat), we need to properly
+    // update the content and trigger framework events (React/Vue/etc.)
+
+    // Focus the element first
+    el.focus();
+
+    // Get current selection
+    const selection = window.getSelection();
+
+    // Select all content
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    // Use execCommand for better compatibility with contentEditable
+    // This is deprecated but still the most reliable way to work with contentEditable
+    document.execCommand('insertText', false, text);
+
+    // Dispatch input events that React/Vue listen for
+    el.dispatchEvent(new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      inputType: 'insertText',
+      data: text
+    }));
+
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // Some frameworks also listen for these
+    el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+    el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+
     return;
   }
 
   if (el.tagName?.toLowerCase() === "input" || el.tagName?.toLowerCase() === "textarea") {
-    el.value = text;
+    // Get the native setter
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      'value'
+    )?.set;
 
-    // Frameworks (React/Vue/etc.) often rely on input events to detect changes.
-    const event = new Event("input", { bubbles: true });
-    el.dispatchEvent(event);
+    const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      'value'
+    )?.set;
+
+    // Use native setter if available (helps with React)
+    if (el.tagName?.toLowerCase() === "textarea" && nativeTextAreaValueSetter) {
+      nativeTextAreaValueSetter.call(el, text);
+    } else if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(el, text);
+    } else {
+      el.value = text;
+    }
+
+    // Trigger React/Vue events
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
 
     return;
   }
