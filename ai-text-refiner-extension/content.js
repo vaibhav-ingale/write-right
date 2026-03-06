@@ -2,8 +2,11 @@
 // Listens for `\` (backslash) key while focus is inside editable element, then shows a floating UI.
 
 const REFINE_SHORTCUT_KEY = "\\";
-const API_ENDPOINT = "http://localhost:8000/v1/chat/completions";
-const MODELS_ENDPOINT = "http://localhost:8000/v1/models";
+const DEFAULT_BACKEND = "http://localhost:8000";
+
+let backendEndpoint = DEFAULT_BACKEND;
+let API_ENDPOINT = `${backendEndpoint}/v1/chat/completions`;
+let MODELS_ENDPOINT = `${backendEndpoint}/v1/models`;
 
 let activeElement = null;
 let popup = null;
@@ -11,43 +14,6 @@ let currentText = "";
 let requireModifierShortcut = true; // can be toggled via the extension popup
 let selectedModel = "";
 let wordLimit = null;
-let selectedTone = null;
-let selectedStyle = null;
-let selectedAudience = null;
-let selectedPurpose = null;
-
-const TONE_OPTIONS = [
-  { value: "", label: "None" },
-  { value: "formal", label: "Formal" },
-  { value: "casual", label: "Casual" },
-  { value: "funny", label: "Funny" },
-  { value: "sarcastic", label: "Sarcastic" }
-];
-
-const STYLE_OPTIONS = [
-  { value: "", label: "None" },
-  { value: "simple", label: "Simple" },
-  { value: "complex", label: "Complex" },
-  { value: "persuasive", label: "Persuasive" },
-  { value: "narrative", label: "Narrative" }
-];
-
-const AUDIENCE_OPTIONS = [
-  { value: "", label: "None" },
-  { value: "general", label: "General" },
-  { value: "professionals", label: "Professionals" },
-  { value: "students", label: "Students" },
-  { value: "customers", label: "Customers" }
-];
-
-const PURPOSE_OPTIONS = [
-  { value: "", label: "None" },
-  { value: "inform", label: "Inform" },
-  { value: "request", label: "Request" },
-  { value: "complain", label: "Complain" },
-  { value: "persuade", label: "Persuade" },
-  { value: "appreciate", label: "Appreciate" }
-];
 
 function loadSettings() {
   if (!chrome?.storage?.local) return;
@@ -56,19 +22,15 @@ function loadSettings() {
       requireModifierShortcut: true,
       selectedModel: "",
       wordLimit: null,
-      selectedTone: null,
-      selectedStyle: null,
-      selectedAudience: null,
-      selectedPurpose: null
+      backendEndpoint: DEFAULT_BACKEND
     },
     (data) => {
       requireModifierShortcut = data.requireModifierShortcut;
       selectedModel = data.selectedModel || "";
       wordLimit = typeof data.wordLimit === "number" ? data.wordLimit : null;
-      selectedTone = data.selectedTone || null;
-      selectedStyle = data.selectedStyle || null;
-      selectedAudience = data.selectedAudience || null;
-      selectedPurpose = data.selectedPurpose || null;
+      backendEndpoint = data.backendEndpoint || DEFAULT_BACKEND;
+      API_ENDPOINT = `${backendEndpoint}/v1/chat/completions`;
+      MODELS_ENDPOINT = `${backendEndpoint}/v1/models`;
     }
   );
 }
@@ -86,23 +48,27 @@ function watchSettingsChanges() {
     if (changes.wordLimit) {
       wordLimit = changes.wordLimit.newValue;
     }
-    if (changes.selectedTone) {
-      selectedTone = changes.selectedTone.newValue || null;
-    }
-    if (changes.selectedStyle) {
-      selectedStyle = changes.selectedStyle.newValue || null;
-    }
-    if (changes.selectedAudience) {
-      selectedAudience = changes.selectedAudience.newValue || null;
-    }
-    if (changes.selectedPurpose) {
-      selectedPurpose = changes.selectedPurpose.newValue || null;
+    if (changes.backendEndpoint) {
+      backendEndpoint = changes.backendEndpoint.newValue || DEFAULT_BACKEND;
+      API_ENDPOINT = `${backendEndpoint}/v1/chat/completions`;
+      MODELS_ENDPOINT = `${backendEndpoint}/v1/models`;
     }
   });
 }
 
 loadSettings();
 watchSettingsChanges();
+
+// Listen for runtime messages (e.g., endpoint updates from popup)
+if (chrome?.runtime?.onMessage) {
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === "updateBackendEndpoint") {
+      backendEndpoint = message.endpoint || DEFAULT_BACKEND;
+      API_ENDPOINT = `${backendEndpoint}/v1/chat/completions`;
+      MODELS_ENDPOINT = `${backendEndpoint}/v1/models`;
+    }
+  });
+}
 
 function isEditable(el) {
   if (!el) return false;
@@ -294,29 +260,8 @@ function createPopup() {
         <div id="ai-text-refiner-model-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Loading models...</div>
       </div>
       <div style="flex:1 1 140px; min-width:140px;">
-        <label style="font-size:11px; opacity:0.75;">Word limit</label>
+        <label style="font-size:11px; opacity:0.75;">Word limit(Optional)</label>
         <input id="ai-text-refiner-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
-        <div id="ai-text-refiner-wordlimit-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Optional</div>
-      </div>
-      <div style="flex:1 1 180px; min-width:160px;">
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
-          <div style="display:flex; gap:6px; align-items:center;">
-            <div style="font-size:11px; opacity:0.75; width:70px;">Tone</div>
-            <div id="ai-text-refiner-tone-options" style="display:flex; gap:6px;"></div>
-          </div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <div style="font-size:11px; opacity:0.75; width:70px;">Style</div>
-            <div id="ai-text-refiner-style-options" style="display:flex; gap:6px;"></div>
-          </div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <div style="font-size:11px; opacity:0.75; width:70px;">Audience</div>
-            <div id="ai-text-refiner-audience-options" style="display:flex; gap:6px;"></div>
-          </div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <div style="font-size:11px; opacity:0.75; width:70px;">Purpose</div>
-            <div id="ai-text-refiner-purpose-options" style="display:flex; gap:6px;"></div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -455,34 +400,6 @@ function openPopupForElement(el, keyboardEvent) {
   const modelStatus = popup.querySelector("#ai-text-refiner-model-status");
   const wordLimitInput = popup.querySelector("#ai-text-refiner-wordlimit");
   const wordLimitStatus = popup.querySelector("#ai-text-refiner-wordlimit-status");
-  const toneOptions = popup.querySelector("#ai-text-refiner-tone-options");
-  const styleOptions = popup.querySelector("#ai-text-refiner-style-options");
-  const audienceOptions = popup.querySelector("#ai-text-refiner-audience-options");
-  const purposeOptions = popup.querySelector("#ai-text-refiner-purpose-options");
-
-  const createOptionButtons = (container, options, selectedValue, onSelect) => {
-    if (!container) return;
-    container.innerHTML = "";
-    const activeValue = selectedValue ?? "";
-    options.forEach((opt) => {
-      const btn = document.createElement("button");
-      btn.textContent = opt.label;
-      btn.dataset.value = opt.value;
-      const isActive = opt.value === activeValue;
-      btn.style.background = isActive ? "rgba(31,111,235,0.9)" : "rgba(255,255,255,0.1)";
-      btn.style.color = isActive ? "#fff" : "rgba(255,255,255,0.8)";
-      btn.style.border = "1px solid rgba(255,255,255,0.18)";
-      btn.style.borderRadius = "8px";
-      btn.style.padding = "4px 10px";
-      btn.style.fontSize = "11px";
-      btn.style.cursor = "pointer";
-      btn.addEventListener("click", () => {
-        onSelect(opt.value);
-        createOptionButtons(container, options, opt.value, onSelect);
-      });
-      container.appendChild(btn);
-    });
-  };
 
   if (wordLimit !== null) {
     wordLimitInput.value = wordLimit;
@@ -507,51 +424,6 @@ function openPopupForElement(el, keyboardEvent) {
     chrome.storage.local?.set?.({ wordLimit });
   });
 
-  const saveSettings = () => {
-    chrome.storage.local?.set?.({
-      selectedModel,
-      wordLimit,
-      selectedTone,
-      selectedStyle,
-      selectedAudience,
-      selectedPurpose
-    });
-  };
-
-  const renderOptionGroups = () => {
-    createOptionButtons(toneOptions, TONE_OPTIONS, selectedTone, (value) => {
-      selectedTone = value || null;
-      saveSettings();
-    });
-    createOptionButtons(styleOptions, STYLE_OPTIONS, selectedStyle, (value) => {
-      selectedStyle = value || null;
-      saveSettings();
-    });
-    createOptionButtons(audienceOptions, AUDIENCE_OPTIONS, selectedAudience, (value) => {
-      selectedAudience = value || null;
-      saveSettings();
-    });
-    createOptionButtons(purposeOptions, PURPOSE_OPTIONS, selectedPurpose, (value) => {
-      selectedPurpose = value || null;
-
-      // If user chooses 'None' for purpose, clear any word-limit to avoid implicit constraints.
-      if (!value) {
-        wordLimit = null;
-        const wordLimitInput = popup.querySelector("#ai-text-refiner-wordlimit");
-        const wordLimitStatus = popup.querySelector("#ai-text-refiner-wordlimit-status");
-        if (wordLimitInput) {
-          wordLimitInput.value = "";
-        }
-        if (wordLimitStatus) {
-          wordLimitStatus.textContent = "Optional";
-        }
-      }
-
-      saveSettings();
-    });
-  };
-
-  renderOptionGroups();
   loadModelsForPopup(modelSelect, modelStatus);
   positionPopup(keyboardEvent);
 }
@@ -604,18 +476,6 @@ async function runRefinement(task) {
     }
     if (wordLimit && Number.isFinite(wordLimit)) {
       payload.maxWords = Number(wordLimit);
-    }
-    if (selectedTone) {
-      payload.tone = selectedTone;
-    }
-    if (selectedStyle) {
-      payload.style = selectedStyle;
-    }
-    if (selectedAudience) {
-      payload.audience = selectedAudience;
-    }
-    if (selectedPurpose) {
-      payload.purpose = selectedPurpose;
     }
 
     const response = await fetch(API_ENDPOINT, {

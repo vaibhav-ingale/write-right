@@ -28,7 +28,7 @@ Core Instructions:
 - Preserve the original meaning and intent unless instructed otherwise
 - Do not use emojis or contractions (e.g., use "do not" instead of "don't")
 - Follow markdown formatting only if the input uses it; otherwise, use plain text
-- Apply any additional constraints (tone, style, audience, word limit) specified in the user message`;
+- Apply any additional constraints (word limit) specified in the user message`;
 
 // Task-specific instructions: brief and focused
 const REFINE_TASKS = {
@@ -57,18 +57,6 @@ function buildOllamaRequest(body) {
   // Build additional constraints (only if specified)
   const constraints = [];
 
-  if (body.tone) {
-    constraints.push(`Tone: ${body.tone}`);
-  }
-  if (body.style) {
-    constraints.push(`Style: ${body.style}`);
-  }
-  if (body.audience) {
-    constraints.push(`Audience: ${body.audience}`);
-  }
-  if (body.purpose) {
-    constraints.push(`Purpose: ${body.purpose}`);
-  }
   if (body.maxWords) {
     constraints.push(`Word limit: ${body.maxWords} words maximum`);
   }

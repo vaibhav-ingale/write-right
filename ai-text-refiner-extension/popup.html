@@ -5,68 +5,444 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Write Right</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
-        padding: 12px;
+        padding: 0;
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        width: 280px;
-        background: #0b0e15;
-        color: #fff;
+        width: 360px;
+        background: linear-gradient(135deg, #0b0e15 0%, #161b26 100%);
+        color: #e8eaed;
+      }
+
+      .container {
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
 
       h1 {
-        font-size: 16px;
-        margin: 0 0 10px;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        margin-bottom: 5px;
+        color: #fff;
+        letter-spacing: -0.3px;
+      }
+
+      .subtitle {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        margin: -2px 0 0 0;
+      }
+
+      .quick-start {
+        background: rgba(31, 111, 235, 0.08);
+        border: 1px solid rgba(31, 111, 235, 0.2);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 20px;
+      }
+
+      .quick-start-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #8ab4f8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+      }
+
+      .quick-start-text {
+        font-size: 13px;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .kbd {
+        display: inline-block;
+        padding: 2px 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .section {
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+      }
+
+      .setting-item {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s ease;
+      }
+
+      .setting-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+
+      .setting-info {
+        flex: 1;
+      }
+
+      .setting-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #fff;
+        margin-bottom: 2px;
+      }
+
+      .setting-desc {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.4;
+      }
+
+      /* Custom toggle switch */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.15);
+        transition: 0.3s;
+        border-radius: 999px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      input:checked + .slider {
+        background-color: #1f6feb;
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(20px);
       }
 
       button {
-        padding: 8px 12px;
-        border-radius: 8px;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 10px;
         border: none;
-        background: #1f6feb;
+        background: linear-gradient(135deg, #1f6feb 0%, #0d47a1 100%);
         color: #fff;
         cursor: pointer;
-        font-size: 13px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(31, 111, 235, 0.2);
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(31, 111, 235, 0.3);
+      }
+
+      button:active {
+        transform: translateY(0);
       }
 
       .status {
-        margin-top: 10px;
+        margin-top: 12px;
+        padding: 10px 12px;
         font-size: 12px;
-        line-height: 1.4;
+        line-height: 1.5;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.7);
+        min-height: 20px;
+      }
+
+      .status.success {
+        background: rgba(52, 211, 153, 0.1);
+        border-color: rgba(52, 211, 153, 0.3);
+        color: #6ee7b7;
+      }
+
+      .status.error {
+        background: rgba(248, 113, 113, 0.1);
+        border-color: rgba(248, 113, 113, 0.3);
+        color: #fca5a5;
+      }
+
+      .status.checking {
+        background: rgba(251, 191, 36, 0.1);
+        border-color: rgba(251, 191, 36, 0.3);
+        color: #fcd34d;
+      }
+
+      .backend-info {
+        margin-top: 20px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+      }
+
+      .backend-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+
+      .backend-url {
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        font-size: 12px;
+        color: #8ab4f8;
+        word-break: break-all;
+      }
+
+      .backend-note {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 6px;
       }
 
       a {
         color: #8ab4f8;
         text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      a:hover {
+        color: #adc8ff;
+        text-decoration: underline;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 16px 0;
+      }
+
+      .endpoint-config {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .endpoint-display {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .endpoint-input-group {
+        flex: 1;
+        display: none;
+        gap: 8px;
+      }
+
+      .endpoint-input-group.active {
+        display: flex;
+      }
+
+      .endpoint-input {
+        flex: 1;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.3);
+        color: #fff;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        font-size: 12px;
+      }
+
+      .endpoint-input:focus {
+        outline: none;
+        border-color: #1f6feb;
+        box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.2);
+      }
+
+      .icon-btn {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        box-shadow: none;
+      }
+
+      .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .icon-btn.save {
+        background: #1f6feb;
+        color: #fff;
+      }
+
+      .icon-btn.save:hover {
+        background: #1557d0;
+      }
+
+      .icon-btn.cancel {
+        background: rgba(248, 113, 113, 0.2);
+        color: #fca5a5;
+      }
+
+      .icon-btn.cancel:hover {
+        background: rgba(248, 113, 113, 0.3);
       }
     </style>
   </head>
   <body>
-    <h1>Write Right</h1>
-    <p>Press <strong>\</strong> inside a textbox to open the popup UI and refine text with a local LLM.</p>
-    <label style="display:flex; align-items:center; gap:6px; margin-bottom:10px; font-size:12px;">
-      <input type="checkbox" id="modifierToggle" />
-      Require <strong>Ctrl</strong> / <strong>Cmd</strong> + <strong>\</strong> to open (recommended)
-    </label>
+    <div class="container">
+      <div class="header">
+        <div class="icon">
+          <img src="icons/logo-48.png" alt="Write Right Logo" />
+        </div>
+        <div>
+          <h1>Write Right</h1>
+          <p class="subtitle">AI-Powered Text Refinement Companion</p>
+        </div>
+      </div>
 
-    <label style="display:flex; flex-direction:column; gap:4px; font-size:12px; margin-bottom:10px;">
-      <span style="font-weight:600;">Model</span>
-      <select id="modelSelect" style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35); color: #fff;"></select>
-      <span id="modelStatus" style="font-size:11px; opacity:0.75;">Loading available models...</span>
-    </label>
+      <div class="quick-start">
+        <div class="quick-start-title">Quick Start</div>
+        <div class="quick-start-text">
+          Simply press the backslash <span class="kbd">\</span> in any text field to refine your writing with AI suggestions. 
+        </div>
+      </div>
 
-    <label style="display:flex; flex-direction:column; gap:4px; font-size:12px; margin-bottom:10px;">
-      <span style="font-weight:600;">Word limit (optional)</span>
-      <input id="wordLimit" type="number" min="1" placeholder="e.g. 400" style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35); color: #fff;" />
-      <span id="wordLimitStatus" style="font-size:11px; opacity:0.75;">Leave empty for no limit.</span>
-    </label>
+      <section class="section">
+        <div class="section-title">Settings</div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">Keyboard Shortcut</div>
+            <div class="setting-desc">Require <span class="kbd">Ctrl</span> / <span class="kbd">Cmd</span> + <span class="kbd">\</span> to activate</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="modifierToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
 
+      <section class="section">
+        <div class="section-title">Backend Status</div>
+        <button id="check">Check Backend Connection</button>
+        <div class="status" id="status"></div>
+      </section>
 
-    <button id="check">Check backend</button>
-    <div class="status" id="status"></div>
-    <div style="margin-top: 14px; font-size: 11px; opacity: 0.75;">
-      Backend: <code>http://localhost:8000</code><br />
-      Make sure <a href="#" id="serverLink">backend</a> is running.
+      <div class="backend-info">
+        <div class="backend-label">Backend Endpoint</div>
+        <div class="endpoint-config">
+          <div class="endpoint-display">
+            <div class="backend-url" id="endpointDisplay">http://localhost:8000</div>
+            <button class="icon-btn" id="editEndpoint" title="Edit endpoint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="endpoint-input-group" id="endpointInputGroup">
+            <input type="text" class="endpoint-input" id="endpointInput" placeholder="http://localhost:8000" />
+            <button class="icon-btn save" id="saveEndpoint" title="Save">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+            <button class="icon-btn cancel" id="cancelEndpoint" title="Cancel">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="backend-note">
+          Ensure the <a href="#" id="serverLink">backend server</a> is running locally
+        </div>
+      </div>
     </div>
     <script src="popup.js"></script>
   </body>

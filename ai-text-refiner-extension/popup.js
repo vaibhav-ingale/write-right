@@ -1,41 +1,58 @@
 const statusEl = document.getElementById("status");
 const checkBtn = document.getElementById("check");
 const serverLink = document.getElementById("serverLink");
-const modelSelect = document.getElementById("modelSelect");
-const modelStatus = document.getElementById("modelStatus");
-const wordLimitInput = document.getElementById("wordLimit");
-const wordLimitStatus = document.getElementById("wordLimitStatus");
-const wordCountStatus = document.createElement("div");
+const endpointDisplay = document.getElementById("endpointDisplay");
+const endpointInput = document.getElementById("endpointInput");
+const endpointInputGroup = document.getElementById("endpointInputGroup");
+const editEndpointBtn = document.getElementById("editEndpoint");
+const saveEndpointBtn = document.getElementById("saveEndpoint");
+const cancelEndpointBtn = document.getElementById("cancelEndpoint");
 
-const BACKEND_BASE = "http://localhost:8000";
-const BACKEND_URL = `${BACKEND_BASE}/v1/chat/completions`;
-const MODELS_URL = `${BACKEND_BASE}/v1/models`;
-
-let selectedModel = "";
-let wordLimit = null;
+const DEFAULT_BACKEND = "http://localhost:8000";
+let currentBackendUrl = DEFAULT_BACKEND;
 
 async function checkBackend() {
-  statusEl.textContent = "Checking...";
+  statusEl.textContent = "Checking connection...";
+  statusEl.className = "status checking";
+
+  const modelsUrl = `${currentBackendUrl}/v1/models`;
+  console.log('[Write Right] Checking backend at:', modelsUrl);
+
   try {
-    const response = await fetch(BACKEND_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        refinement: "clarity",
-        text: "Hello from Write Right"
-      })
+    const response = await fetch(modelsUrl, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
     });
 
+    console.log('[Write Right] Response status:', response.status);
+
     if (!response.ok) {
-      const text = await response.text();
-      statusEl.textContent = `Backend error: ${response.status} ${response.statusText} - ${text}`;
+      statusEl.className = "status error";
+      statusEl.textContent = `Backend error: ${response.status} ${response.statusText}`;
       return;
     }
 
     const payload = await response.json();
-    statusEl.textContent = `Backend OK — got ${payload?.choices?.[0]?.message?.content?.length ?? 0} chars back.`;
+    console.log('[Write Right] Response payload:', payload);
+
+    // Handle different response structures
+    let modelCount = 0;
+    if (Array.isArray(payload?.data)) {
+      modelCount = payload.data.length;
+    } else if (Array.isArray(payload?.models)) {
+      modelCount = payload.models.length;
+    } else if (Array.isArray(payload)) {
+      modelCount = payload.length;
+    } else if (payload?.object === 'list' && Array.isArray(payload?.data)) {
+      modelCount = payload.data.length;
+    }
+
+    statusEl.className = "status success";
+    statusEl.textContent = `✓ Backend is running! Found ${modelCount} model${modelCount !== 1 ? 's' : ''} available.`;
   } catch (err) {
-    statusEl.textContent = `Unable to reach backend: ${err.message}`;
+    console.error('[Write Right] Backend check failed:', err);
+    statusEl.className = "status error";
+    statusEl.textContent = `✗ Unable to reach backend: ${err.message}`;
   }
 }
 
@@ -43,18 +60,15 @@ const modifierToggle = document.getElementById("modifierToggle");
 
 function loadSettings() {
   if (!chrome?.storage?.local) return;
-  chrome.storage.local.get(
-    { requireModifierShortcut: true, selectedModel: "", wordLimit: null },
-    (data) => {
-      modifierToggle.checked = Boolean(data.requireModifierShortcut);
-      selectedModel = data.selectedModel || "";
-      wordLimit = typeof data.wordLimit === "number" ? data.wordLimit : null;
-      if (wordLimit !== null) {
-        wordLimitInput.value = wordLimit;
-      }
-      loadModels();
-    }
-  );
+  chrome.storage.local.get({
+    requireModifierShortcut: true,
+    backendEndpoint: DEFAULT_BACKEND
+  }, (data) => {
+    modifierToggle.checked = Boolean(data.requireModifierShortcut);
+    currentBackendUrl = data.backendEndpoint || DEFAULT_BACKEND;
+    endpointDisplay.textContent = currentBackendUrl;
+    endpointInput.value = currentBackendUrl;
+  });
 }
 
 function setModifierSetting(enabled) {
@@ -62,93 +76,74 @@ function setModifierSetting(enabled) {
   chrome.storage.local.set({ requireModifierShortcut: enabled });
 }
 
-function setSelectedModel(model) {
-  selectedModel = model || "";
-  if (!chrome?.storage?.local) return;
-  chrome.storage.local.set({ selectedModel: selectedModel });
-}
-
-function setWordLimit(limit) {
-  wordLimit = limit;
-  if (!chrome?.storage?.local) return;
-  chrome.storage.local.set({ wordLimit: limit });
-}
-
-async function loadModels() {
-  if (!modelSelect) return;
-  modelStatus.textContent = "Loading models...";
-  modelSelect.disabled = true;
-  wordCountStatus.textContent = "";
-
-  // Ensure the word count status element is visible.
-  if (!wordCountStatus.parentElement) {
-    const statusContainer = document.querySelector(".status");
-    if (statusContainer) {
-      wordCountStatus.style.marginTop = "6px";
-      wordCountStatus.style.fontSize = "12px";
-      wordCountStatus.style.opacity = "0.85";
-      statusContainer.appendChild(wordCountStatus);
-    }
-  }
-
-  try {
-    const response = await fetch(MODELS_URL);
-    const data = await response.json();
-
-    if (!response.ok) {
-      modelStatus.textContent = `Failed to load models: ${response.status}`;
-      return;
-    }
-
-    const models = Array.isArray(data.models) ? data.models : [];
-
-    modelSelect.innerHTML = "";
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = "Use backend default model";
-    modelSelect.appendChild(defaultOption);
-
-    models.forEach((model) => {
-      const option = document.createElement("option");
-      option.value = model;
-      option.textContent = model;
-      modelSelect.appendChild(option);
-    });
-
-    if (selectedModel) {
-      modelSelect.value = selectedModel;
-    }
-
-    modelStatus.textContent = "";
-  } catch (err) {
-    modelStatus.textContent = `Unable to load models: ${err.message}`;
-  } finally {
-    modelSelect.disabled = false;
-  }
-}
 
 modifierToggle.addEventListener("change", (e) => {
   setModifierSetting(e.target.checked);
 });
 
-modelSelect.addEventListener("change", (e) => {
-  setSelectedModel(e.target.value);
+// Endpoint editing functionality
+editEndpointBtn.addEventListener("click", () => {
+  endpointDisplay.parentElement.style.display = "none";
+  endpointInputGroup.classList.add("active");
+  endpointInput.focus();
 });
 
-wordLimitInput.addEventListener("input", (e) => {
-  const value = Number(e.target.value);
-  if (!value || value < 1) {
-    wordLimit = null;
-    wordLimitStatus.textContent = "Leave empty for no limit.";
-    setWordLimit(null);
+cancelEndpointBtn.addEventListener("click", () => {
+  endpointInput.value = currentBackendUrl;
+  endpointInputGroup.classList.remove("active");
+  endpointDisplay.parentElement.style.display = "flex";
+});
+
+saveEndpointBtn.addEventListener("click", () => {
+  let newEndpoint = endpointInput.value.trim();
+
+  // Remove trailing slash if present
+  if (newEndpoint.endsWith('/')) {
+    newEndpoint = newEndpoint.slice(0, -1);
+  }
+
+  // Basic validation
+  if (!newEndpoint.startsWith('http://') && !newEndpoint.startsWith('https://')) {
+    statusEl.className = "status error";
+    statusEl.textContent = "✗ Endpoint must start with http:// or https://";
     return;
   }
 
-  wordLimit = value;
-  wordLimitStatus.textContent = `Limit set to ${value} words.`;
-  setWordLimit(value);
+  currentBackendUrl = newEndpoint;
+  endpointDisplay.textContent = newEndpoint;
+
+  // Save to storage
+  if (chrome?.storage?.local) {
+    chrome.storage.local.set({ backendEndpoint: newEndpoint }, () => {
+      statusEl.className = "status success";
+      statusEl.textContent = "✓ Backend endpoint saved successfully!";
+
+      // Update content script
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          chrome.tabs.sendMessage(tab.id, {
+            type: "updateBackendEndpoint",
+            endpoint: newEndpoint
+          }).catch(() => {
+            // Ignore errors for tabs that don't have the content script
+          });
+        });
+      });
+    });
+  }
+
+  endpointInputGroup.classList.remove("active");
+  endpointDisplay.parentElement.style.display = "flex";
 });
 
+// Allow Enter to save, Escape to cancel
+endpointInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    saveEndpointBtn.click();
+  } else if (e.key === "Escape") {
+    cancelEndpointBtn.click();
+  }
+});
 
 checkBtn.addEventListener("click", checkBackend);
 serverLink.addEventListener("click", (e) => {
