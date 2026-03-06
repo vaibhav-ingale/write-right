@@ -304,18 +304,19 @@ function createPopup() {
     </div>
 
     <div id="writeright-advanced" style="display:none; flex-wrap:wrap; gap:8px; margin-top:8px;">
-      <div style="flex:1 1 180px; min-width:160px;">
+      <div style="flex:1 1 180px; min-width:160px; max-width:100%;">
         <label style="font-size:11px; opacity:0.75;">Model</label>
         <select id="writeright-model" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;"></select>
         <div id="writeright-model-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Loading models...</div>
       </div>
-      <div style="flex:1 1 140px; min-width:140px;">
-        <label style="font-size:11px; opacity:0.75;">Word limit(Optional)</label>
-        <input id="writeright-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
+      <div style="flex:1 1 120px; min-width:100px; max-width:100%;">
+        <label style="font-size:11px; opacity:0.75;">Word limit</label>
+        <input id="writeright-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff; box-sizing:border-box;" />
       </div>
     </div>
 
     <div id="writeright-buttons" style="display:flex; flex-wrap:wrap; gap:6px; padding-top:8px;"></div>
+    <div id="writeright-wordlimit-status" style="justify-content:flex-start; font-size:10px; opacity:0.7; margin-top:4px;">Word Limit Disabled</div>
     <div style="display:flex; justify-content:flex-end; margin-top:10px;">
       <button id="writeright-apply" style="background:#1f6feb; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:600;">Insert Text</button>
     </div>
@@ -443,38 +444,53 @@ function openPopupForElement(el, keyboardEvent) {
   }
 
   const textarea = popup.querySelector("#writeright-input");
-  textarea.value = currentText;
-  textarea.focus();
-  textarea.select();
+  if (textarea) {
+    textarea.value = currentText;
+    textarea.focus();
+    textarea.select();
+  }
+
   const modelSelect = popup.querySelector("#writeright-model");
   const modelStatus = popup.querySelector("#writeright-model-status");
   const wordLimitInput = popup.querySelector("#writeright-wordlimit");
   const wordLimitStatus = popup.querySelector("#writeright-wordlimit-status");
 
-  if (wordLimit !== null) {
+  if (wordLimitInput && wordLimit !== null) {
     wordLimitInput.value = wordLimit;
-    wordLimitStatus.textContent = `Limit set to ${wordLimit} words.`;
+    if (wordLimitStatus) {
+      wordLimitStatus.textContent = `Limit set to ${wordLimit} words.`;
+    }
   }
 
-  modelSelect.addEventListener("change", (event) => {
-    selectedModel = event.target.value;
-    chrome.storage.local?.set?.({ selectedModel });
-  });
+  if (modelSelect) {
+    modelSelect.addEventListener("change", (event) => {
+      selectedModel = event.target.value;
+      chrome.storage.local?.set?.({ selectedModel });
+    });
+  }
 
-  wordLimitInput.addEventListener("input", (event) => {
-    const value = Number(event.target.value);
-    if (!value || value < 1) {
-      wordLimit = null;
-      wordLimitStatus.textContent = "Optional";
-      chrome.storage.local?.set?.({ wordLimit: null });
-      return;
-    }
-    wordLimit = value;
-    wordLimitStatus.textContent = `Limit set to ${value} words.`;
-    chrome.storage.local?.set?.({ wordLimit });
-  });
+  if (wordLimitInput) {
+    wordLimitInput.addEventListener("input", (event) => {
+      const value = Number(event.target.value);
+      if (!value || value < 1) {
+        wordLimit = null;
+        if (wordLimitStatus) {
+          wordLimitStatus.textContent = "Optional";
+        }
+        chrome.storage.local?.set?.({ wordLimit: null });
+        return;
+      }
+      wordLimit = value;
+      if (wordLimitStatus) {
+        wordLimitStatus.textContent = `Limit set to ${value} words.`;
+      }
+      chrome.storage.local?.set?.({ wordLimit });
+    });
+  }
 
-  loadModelsForPopup(modelSelect, modelStatus);
+  if (modelSelect && modelStatus) {
+    loadModelsForPopup(modelSelect, modelStatus);
+  }
   positionPopup(keyboardEvent);
 }
 
