@@ -16,7 +16,7 @@ async function checkBackend() {
   statusEl.className = "status checking";
 
   const modelsUrl = `${currentBackendUrl}/v1/models`;
-  console.log('[Write Right] Checking backend at:', modelsUrl);
+  console.log('[WriteRight] Checking backend at:', modelsUrl);
 
   try {
     const response = await fetch(modelsUrl, {
@@ -24,7 +24,7 @@ async function checkBackend() {
       headers: { "Content-Type": "application/json" }
     });
 
-    console.log('[Write Right] Response status:', response.status);
+    console.log('[WriteRight] Response status:', response.status);
 
     if (!response.ok) {
       statusEl.className = "status error";
@@ -33,7 +33,7 @@ async function checkBackend() {
     }
 
     const payload = await response.json();
-    console.log('[Write Right] Response payload:', payload);
+    console.log('[WriteRight] Response payload:', payload);
 
     // Handle different response structures
     let modelCount = 0;
@@ -50,7 +50,7 @@ async function checkBackend() {
     statusEl.className = "status success";
     statusEl.textContent = `✓ Backend is running! Found ${modelCount} model${modelCount !== 1 ? 's' : ''} available.`;
   } catch (err) {
-    console.error('[Write Right] Backend check failed:', err);
+    console.error('[WriteRight] Backend check failed:', err);
     statusEl.className = "status error";
     statusEl.textContent = `✗ Unable to reach backend: ${err.message}`;
   }

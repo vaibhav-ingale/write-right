@@ -1,4 +1,4 @@
-// Write Right content script
+// WriteRight content script
 // Listens for `\` (backslash) key while focus is inside editable element, then shows a floating UI.
 
 const REFINE_SHORTCUT_KEY = "\\";
@@ -170,21 +170,21 @@ async function loadModelsForPopup(selectEl, statusEl) {
 
 function createPopup() {
   const wrapper = document.createElement("div");
-  wrapper.id = "ai-text-refiner-popup";
+  wrapper.id = "writeright-popup";
   wrapper.style.position = "fixed";
   wrapper.style.zIndex = "999999";
   wrapper.style.minWidth = "320px";
   wrapper.style.maxWidth = "420px";
   // Frosted glass look: use a semi-transparent background + backdrop blur.
-  wrapper.style.background = "rgba(20, 20, 25, 0.65)";
+  wrapper.style.background = "rgba(0, 0, 0, 0.7)";
   wrapper.style.border = "1px solid rgba(255, 255, 255, 0.05)";
   wrapper.style.borderRadius = "12px";
   wrapper.style.boxShadow = "0 10px 50px rgb(0, 0, 0)";
   wrapper.style.color = "#fff";
   wrapper.style.fontFamily = "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
   wrapper.style.padding = "10px";
-  wrapper.style.backdropFilter = "blur(10px)";
-  wrapper.style.webkitBackdropFilter = "blur(10px)";
+  wrapper.style.backdropFilter = "blur(5px)";
+  wrapper.style.webkitBackdropFilter = "blur(5px)";
   wrapper.style.transition = "opacity 120ms ease";
   wrapper.style.opacity = "0";
   wrapper.style.maxHeight = "70vh";
@@ -242,35 +242,35 @@ function createPopup() {
       }
     </style>
 
-    <div id="ai-text-refiner-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; padding-bottom: 8px;">
-      <div style="font-weight:600; font-size:14px;">Write Right - AI Text Refiner</div>
-      <button id="ai-text-refiner-close" style="background:transparent; border:none; color:rgba(255,255,255,0.7); font-size:18px; cursor:pointer;">×</button>
+    <div id="writeright-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; padding-bottom: 8px;">
+      <div style="font-weight:600; font-size:14px;">WriteRight</div>
+      <button id="writeright-close" style="background:transparent; border:none; color:rgba(255,255,255,0.7); font-size:18px; cursor:pointer;">×</button>
     </div>
-    <textarea id="ai-text-refiner-input" style="width:100%; height:140px; resize:vertical; border-radius:8px; border:1px solid rgba(255,255,255,0.18); padding:8px; background:rgba(0,0,0,0.45); color:#fff; outline:none; font-size:13px;" spellcheck="true"></textarea>
+    <textarea id="writeright-input" style="width:100%; height:140px; resize:vertical; border-radius:8px; border:1px solid rgba(255,255,255,0.18); padding:8px; background:rgba(0,0,0,0.45); color:#fff; outline:none; font-size:13px;" spellcheck="true"></textarea>
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
       <div style="font-size:12px; opacity:0.75;">Advanced settings</div>
-      <button id="ai-text-refiner-advanced-toggle" style="background:rgba(255,255,255,0.1); border:none; color:#fff; padding:4px 8px; border-radius:8px; cursor:pointer; font-size:12px;">Show ▾</button>
+      <button id="writeright-advanced-toggle" style="background:rgba(255,255,255,0.1); border:none; color:#fff; padding:4px 8px; border-radius:8px; cursor:pointer; font-size:12px;">Show ▾</button>
     </div>
 
-    <div id="ai-text-refiner-advanced" style="display:none; flex-wrap:wrap; gap:8px; margin-top:8px;">
+    <div id="writeright-advanced" style="display:none; flex-wrap:wrap; gap:8px; margin-top:8px;">
       <div style="flex:1 1 180px; min-width:160px;">
         <label style="font-size:11px; opacity:0.75;">Model</label>
-        <select id="ai-text-refiner-model" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;"></select>
-        <div id="ai-text-refiner-model-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Loading models...</div>
+        <select id="writeright-model" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;"></select>
+        <div id="writeright-model-status" style="font-size:10px; opacity:0.7; margin-top:4px;">Loading models...</div>
       </div>
       <div style="flex:1 1 140px; min-width:140px;">
         <label style="font-size:11px; opacity:0.75;">Word limit(Optional)</label>
-        <input id="ai-text-refiner-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
+        <input id="writeright-wordlimit" type="number" min="1" placeholder="e.g. 400" style="width:100%; height:34px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.4); color:#fff;" />
       </div>
     </div>
 
-    <div id="ai-text-refiner-buttons" style="display:flex; flex-wrap:wrap; gap:6px; padding-top:8px;"></div>
+    <div id="writeright-buttons" style="display:flex; flex-wrap:wrap; gap:6px; padding-top:8px;"></div>
     <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-      <button id="ai-text-refiner-apply" style="background:#1f6feb; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:600;">Insert Text</button>
+      <button id="writeright-apply" style="background:#1f6feb; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:600;">Insert Text</button>
     </div>
-    <div id="ai-text-refiner-count" style="margin-top:8px; font-size:11px; color:rgba(180,220,255,0.75);"></div>
-    <div id="ai-text-refiner-status" style="margin-top:4px; font-size:11px; color:rgba(255,255,255,0.7);"></div>
+    <div id="writeright-count" style="margin-top:8px; font-size:11px; color:rgba(180,220,255,0.75);"></div>
+    <div id="writeright-status" style="margin-top:4px; font-size:11px; color:rgba(255,255,255,0.7);"></div>
   `;
 
   document.body.appendChild(wrapper);
@@ -278,11 +278,11 @@ function createPopup() {
     wrapper.style.opacity = "1";
   });
 
-  const closeBtn = wrapper.querySelector("#ai-text-refiner-close");
+  const closeBtn = wrapper.querySelector("#writeright-close");
   closeBtn.addEventListener("click", () => closePopup());
 
-  const advancedToggle = wrapper.querySelector("#ai-text-refiner-advanced-toggle");
-  const advancedSection = wrapper.querySelector("#ai-text-refiner-advanced");
+  const advancedToggle = wrapper.querySelector("#writeright-advanced-toggle");
+  const advancedSection = wrapper.querySelector("#writeright-advanced");
   let advancedOpen = false;
 
   const setAdvancedOpen = (open) => {
@@ -300,10 +300,10 @@ function createPopup() {
     }
   });
 
-  const header = wrapper.querySelector("#ai-text-refiner-header");
+  const header = wrapper.querySelector("#writeright-header");
   makeDraggable(wrapper, header);
 
-  const textarea = wrapper.querySelector("#ai-text-refiner-input");
+  const textarea = wrapper.querySelector("#writeright-input");
   textarea.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
@@ -321,7 +321,7 @@ function createPopup() {
     { id: "tone", label: "Improve Tone" }
   ];
 
-  const btnContainer = wrapper.querySelector("#ai-text-refiner-buttons");
+  const btnContainer = wrapper.querySelector("#writeright-buttons");
   buttons.forEach((btn) => {
     const b = document.createElement("button");
     b.textContent = btn.label;
@@ -338,7 +338,7 @@ function createPopup() {
     btnContainer.appendChild(b);
   });
 
-  const apply = wrapper.querySelector("#ai-text-refiner-apply");
+  const apply = wrapper.querySelector("#writeright-apply");
   apply.addEventListener("click", applyResult);
 
   return wrapper;
@@ -392,14 +392,14 @@ function openPopupForElement(el, keyboardEvent) {
     popup = createPopup();
   }
 
-  const textarea = popup.querySelector("#ai-text-refiner-input");
+  const textarea = popup.querySelector("#writeright-input");
   textarea.value = currentText;
   textarea.focus();
   textarea.select();
-  const modelSelect = popup.querySelector("#ai-text-refiner-model");
-  const modelStatus = popup.querySelector("#ai-text-refiner-model-status");
-  const wordLimitInput = popup.querySelector("#ai-text-refiner-wordlimit");
-  const wordLimitStatus = popup.querySelector("#ai-text-refiner-wordlimit-status");
+  const modelSelect = popup.querySelector("#writeright-model");
+  const modelStatus = popup.querySelector("#writeright-model-status");
+  const wordLimitInput = popup.querySelector("#writeright-wordlimit");
+  const wordLimitStatus = popup.querySelector("#writeright-wordlimit-status");
 
   if (wordLimit !== null) {
     wordLimitInput.value = wordLimit;
@@ -452,7 +452,7 @@ function closePopup() {
 
 function setStatus(message, isError) {
   if (!popup) return;
-  const status = popup.querySelector("#ai-text-refiner-status");
+  const status = popup.querySelector("#writeright-status");
   if (!status) return;
   status.textContent = message;
   status.style.color = isError ? "rgba(255, 120, 120, 0.95)" : "rgba(180, 220, 255, 0.9)";
@@ -460,7 +460,7 @@ function setStatus(message, isError) {
 
 async function runRefinement(task) {
   if (!popup) return;
-  const textarea = popup.querySelector("#ai-text-refiner-input");
+  const textarea = popup.querySelector("#writeright-input");
   const text = textarea.value.trim();
   if (!text) {
     setStatus("Type or paste some text before refining.", true);
@@ -508,7 +508,7 @@ async function runRefinement(task) {
 
 function updateCount(text) {
   if (!popup) return;
-  const countEl = popup.querySelector("#ai-text-refiner-count");
+  const countEl = popup.querySelector("#writeright-count");
   if (!countEl) return;
 
   const charCount = text.length;
@@ -518,7 +518,7 @@ function updateCount(text) {
 
 function applyResult() {
   if (!popup || !activeElement) return;
-  const textarea = popup.querySelector("#ai-text-refiner-input");
+  const textarea = popup.querySelector("#writeright-input");
   setTextToElement(activeElement, textarea.value);
   closePopup();
 }

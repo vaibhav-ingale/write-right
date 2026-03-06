@@ -3,7 +3,7 @@
 // background worker in case we want to proxy requests or manage persistent state.
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Write Right extension installed.");
+  console.log("WriteRight extension installed.");
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

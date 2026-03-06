@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AI Text Refiner",
+  "name": "WriteRight",
   "version": "1.0.0",
-  "description": "Refine text in any textbox with a local LLM backend.",
+  "description": "Refine text in any textbox with AI-powered writing assistance.",
   "permissions": [
     "storage",
     "scripting"
@@ -22,7 +22,7 @@
     }
   ],
   "action": {
-    "default_title": "AI Text Refiner",
+    "default_title": "WriteRight",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/logo-16.png",
