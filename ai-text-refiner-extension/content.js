@@ -290,6 +290,24 @@ function createPopup() {
       input:checked + .slider:before {
         transform: translateX(20px);
       }
+
+      #writeright-input::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      #writeright-input::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+      }
+
+      #writeright-input::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      #writeright-input::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.4);
+      }
     </style>
 
     <div id="writeright-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; padding-bottom: 8px;">
@@ -475,7 +493,7 @@ function openPopupForElement(el, keyboardEvent) {
       if (!value || value < 1) {
         wordLimit = null;
         if (wordLimitStatus) {
-          wordLimitStatus.textContent = "Optional";
+          wordLimitStatus.textContent = "Word Limit Disabled";
         }
         chrome.storage.local?.set?.({ wordLimit: null });
         return;
@@ -565,7 +583,7 @@ async function runRefinement(task) {
 
     textarea.value = refined;
     updateCount(refined);
-    setStatus("Refinement complete. Click Apply to replace the text.", false);
+    setStatus("Refinement complete. Click Insert Text to replace the text.", false);
   } catch (err) {
     console.error(err);
     setStatus(`Error: ${err.message}`, true);
