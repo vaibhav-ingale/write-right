@@ -69,26 +69,34 @@
     <label for="text-input">Text input</label>
     <input id="text-input" type="text" value="This is a plain text input" />
 
-    <label for="email-input">Email input</label>
-    <input id="email-input" type="email" value="user@example.com" />
-
-    <label for="password-input">Password input</label>
-    <input id="password-input" type="password" value="mypassword" />
-
-    <label for="url-input">URL input</label>
-    <input id="url-input" type="url" value="https://example.com" />
-
-    <label for="search-input">Search input</label>
-    <input id="search-input" type="search" value="Search term" />
-
-    <label for="tel-input">Telephone input</label>
-    <input id="tel-input" type="tel" value="+1 555 123 4567" />
   </fieldset>
 
   <fieldset>
     <legend>Textarea</legend>
     <label for="standard-textarea">Standard textarea</label>
     <textarea id="standard-textarea">This is a standard textarea. You can type multiple lines here.</textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Task-specific text samples</legend>
+
+    <label for="paraphrase-textarea">Paraphrasing sample</label>
+    <textarea id="paraphrase-textarea">we finished the pilot kinda early and client was saying the new dashboard make there weekly reporting way easier, so now we are thinking to push it for whole sales team next quarter if all goes same.</textarea>
+
+    <label for="spellcheck-textarea">Spell check sample</label>
+    <textarea id="spellcheck-textarea">I recieve the shipmant yesturday, but two item was dammaged and one acessory werent in the box at all.</textarea>
+
+    <label for="congratulations-textarea">Congratulations sample</label>
+    <textarea id="congratulations-textarea">Congratz on getting promoted as Senior Product Manager, you really deserve it because your always helping everyone and keeping things moving even when project was messy. wishing you more sucess in new role.</textarea>
+
+    <label for="request-textarea">Request sample</label>
+    <textarea id="request-textarea">Hi facilities team, can you please arrange one extra monitor for desk B-14. right now im doing design and analytics both in one screen and it make the work slower then usual, if possible need it by next wednesday.</textarea>
+
+    <label for="review-textarea">Review sample</label>
+    <textarea id="review-textarea">Stayed here for 3 nights, room was clean and staff was nice mostly. checkin was fast but wifi keeps dropping in evening and breakfast dont have much options, overall okay place if your just there for short work trip.</textarea>
+
+    <label for="complaint-textarea">Complaint sample</label>
+    <textarea id="complaint-textarea">I want to complain about order #48291 deliverd on March 5, 2026. package came 2 days late and blender inside was already cracked, I already msg support but nobody got back properly. please replace it or refund full amount in 5 business day.</textarea>
   </fieldset>
 
   <fieldset>
@@ -102,16 +110,7 @@
     <p id="editable-paragraph" class="editable" contenteditable="true">This is an editable paragraph. It behaves like a text field but is rendered as a paragraph.</p>
   </fieldset>
 
-  <fieldset>
-    <legend>Other editable targets</legend>
 
-    <label for="role-textbox">Role=textbox (ARIA)</label>
-    <div id="role-textbox" class="editable" role="textbox" tabindex="0">This element has role="textbox" and is focusable.</div>
-    <div class="note">If the extension works for this, it is detecting editable content broadly.</div>
-
-    <label for="disabled-input">Disabled input (should not be editable)</label>
-    <input id="disabled-input" type="text" value="Cannot edit this" disabled />
-  </fieldset>
 
   <p>TIP: Focus an editable element and press <strong>Ctrl + \</strong> (or <strong>Cmd + \</strong> on macOS) if modifier mode is enabled.</p>
 </body>

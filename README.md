@@ -1,54 +1,57 @@
 # Write Right (Chrome Extension + Local Backend)
 
-## _Create a fast, privacy-first AI writing assistant that works everywhere on the web without sending data to the cloud._
-
-This repository contains a **Chrome Extension** and a **local backend service** that work together to provide an on-page text refinement experience using a local LLM (via Ollama).
+Local AI writing assistant that refines text directly in webpages using a Chrome extension and a local FastAPI backend.
 
 ## What it does
-- Press `\` while focused inside any editable element (input/textarea/contenteditable) to open the refinement UI.
-- Choose a refinement mode (Formal, Clarity, Concise, etc.) to send your text to a local API.
-- The backend forwards the request to a local Ollama instance and returns the refined text.
-- Click **Apply Result** to replace the original text.
+- Press `\` while focused in an editable field (input, textarea, contenteditable) to open the refiner UI.
+- Pick a refinement mode (Formal, Clarity, Concise, Grammar, etc.).
+- Send text to the local backend, which forwards the request to your local LLM endpoint (for example Ollama).
+- Apply the refined result back into the original field.
 
-## Structure
-- `ai-text-refiner-extension/` – Chrome Extension code (manifest, content script, popup UI)
-- `backend/` – Node/Express local API that proxies to Ollama
-- `project.md` – design notes and feature requirements
+## Project structure
+- `write-right-extension/` - Chrome extension source (manifest, content script, popup).
+- `backend/` - FastAPI backend that proxies requests to an OpenAI-compatible LLM endpoint.
+- `test-inputs.html` - local page with editable controls for extension testing.
+
+## Prerequisites
+- Python 3.10+
+- Ollama installed and running (`ollama serve`)
+- `gemma3:4b` model pulled locally:
+
+```bash
+ollama pull gemma3:4b
+```
 
 ## Setup
 
 ### 1) Start the backend
 
+From this repo root:
+
 ```bash
 cd backend
-npm install
-npm start
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The backend starts on `http://localhost:8000` and forwards requests to Ollama at `http://127.0.0.1:11434` by default.
+Backend env vars are documented in `backend/README.md`.
 
-You can override the Ollama API URL with:
-
-```bash
-OLLAMA_URL=http://127.0.0.1:11434/v1/chat/completions npm start
-```
-
-### 2) Load the Chrome Extension (Dev Mode)
+### 2) Load the extension in Chrome
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select the `ai-text-refiner-extension/` folder in this repo
+4. Select the `write-right-extension/` folder
 
 ### 3) Use it
 
-1. Focus a textbox on any webpage (input, textarea, or contenteditable block)
-2. Press `\` (backslash)
-3. The refinement UI will appear; choose a mode and click **Apply Result**
-
----
+1. Focus any editable field on a page
+2. Press `\` to open the refiner
+3. Choose a mode and click **Apply Result**
 
 ## Notes
-- The extension uses `http://localhost:8000/v1/chat/completions` by default.
-- The backend uses a simple prompt template per refinement task (see `backend/index.js`).
-- The backend is intentionally lightweight; it simply proxies to the configured Ollama endpoint.
+- Default backend endpoint in the extension is `http://localhost:8000`.
+- The request target used by the extension is `/v1/chat/completions`.
+- You can test locally with `test-inputs.html`.
